@@ -63,6 +63,8 @@ This library is a tool that utilizes SVG to draw line charts based on the data p
 	chart.render();
 ```
 
+![[Pasted image 20240103180647.png]]
+
 If you want to use the zoom in/out feature, you can add the following code.
 
 ```js
@@ -79,10 +81,11 @@ If you want to use the zoom in/out feature, you can add the following code.
       hoverCardBackgroundColor:
         'linear-gradient(107deg, rgba(250, 0, 255, 0.48) -36.41%, rgba(72, 81, 155, 0.78) 75.37%)',
       zoom: true, // zoom mode
-      showDataCount: 3, // The number of datas to display initially on the screen.
-      showLabelCount: 3, // The fixed number of labels to display on the screen consistently.
+      showDataCount: 15, // The number of datas to display initially on the screen.
+      showLabelCount: 15, // The fixed number of labels to display on the screen consistently.
     });
 ```
+![[ezgif.com-video-to-gif-converter.gif]]
 
 If you want to apply gradient colors, you can add the following code.
 You need to create gradients directly using the SVG `<defs>` tag.
@@ -158,5 +161,6 @@ You need to create gradients directly using the SVG `<defs>` tag.
 ...
     ];
 ```
+![[Pasted image 20240103180736.png]]
 ## Authors
   - [Always0ne](https://github.com/Always0ne) - **Dong gyun Yang** - <ehdrbdndns@naver.com>
