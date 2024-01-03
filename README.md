@@ -59,6 +59,8 @@ This library is a tool that utilizes SVG to draw line charts based on the data p
       hoverCardBackgroundColor: // The background color of the card that appears when hovering over the chart.
         'linear-gradient(107deg, rgba(250, 0, 255, 0.48) -36.41%, rgba(72, 81, 155, 0.78) 75.37%)',
     });
+
+	chart.render();
 ```
 
 If you want to use the zoom in/out feature, you can add the following code.
