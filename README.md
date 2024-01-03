@@ -63,7 +63,7 @@ This library is a tool that utilizes SVG to draw line charts based on the data p
 	chart.render();
 ```
 
-![[Pasted image 20240103180647.png]]
+![스크린샷 2024-01-03 180639](https://github.com/ehdrbdndns/flowbit-lib/assets/60888473/4f42ff77-d038-41aa-a924-13aa873a5f8c)
 
 If you want to use the zoom in/out feature, you can add the following code.
 
@@ -85,10 +85,12 @@ If you want to use the zoom in/out feature, you can add the following code.
       showLabelCount: 15, // The fixed number of labels to display on the screen consistently.
     });
 ```
-![[ezgif.com-video-to-gif-converter.gif]]
+
+![ezgif com-video-to-gif-converter](https://github.com/ehdrbdndns/flowbit-lib/assets/60888473/4b39e6fa-3c22-49ca-b2c4-806c3c2163dd)
 
 If you want to apply gradient colors, you can add the following code.
 You need to create gradients directly using the SVG `<defs>` tag.
+
 ```js
  const dataList = [
 ...
@@ -161,6 +163,8 @@ You need to create gradients directly using the SVG `<defs>` tag.
 ...
     ];
 ```
-![[Pasted image 20240103180736.png]]
+
+![스크린샷 2024-01-03 180730](https://github.com/ehdrbdndns/flowbit-lib/assets/60888473/ad79ffd8-f186-41b9-a944-c5fcacaebbee)
+
 ## Authors
   - [Always0ne](https://github.com/Always0ne) - **Dong gyun Yang** - <ehdrbdndns@naver.com>
