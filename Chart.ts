@@ -951,27 +951,27 @@ class Chart {
 
     const actualData = dataValueList[0];
     const predictedData = dataValueList[1];
-    const dataDiff =
-      predictedData.cur - actualData.cur > 0
-        ? `<span>예측 오차: <b class="green">+${(
-            predictedData.cur - actualData.cur
-          ).toLocaleString()} KRW</b></span>`
-        : `<span>예측 오차: <b class="red">${(
-            predictedData.cur - actualData.cur
-          ).toLocaleString()} KRW</b></span>`;
-    // const predictedDiff = predictedData.cur - predictedData.prev;
-    // const actualDiff = actualData.cur - actualData.prev;
+    // const dataDiff =
+    //   predictedData.cur - actualData.cur > 0
+    //     ? `<span>예측 오차: <b class="green">+${(
+    //         predictedData.cur - actualData.cur
+    //       ).toLocaleString()} KRW</b></span>`
+    //     : `<span>예측 오차: <b class="red">${(
+    //         predictedData.cur - actualData.cur
+    //       ).toLocaleString()} KRW</b></span>`;
+    // // const predictedDiff = predictedData.cur - predictedData.prev;
+    // // const actualDiff = actualData.cur - actualData.prev;
+    // // const isCorrect =
+    // //   (predictedDiff > 0 && actualDiff > 0) ||
+    // //   (predictedDiff < 0 && actualDiff < 0)
+    // //     ? `<span>플로우빗 상승 추세 예측에 <b class="green">성공</b>했어요!</span>`
+    // //     : `<span>플로우빗 상승 추세 예측에 <b class="red">실패</b>했어요!</span>`;
     // const isCorrect =
-    //   (predictedDiff > 0 && actualDiff > 0) ||
-    //   (predictedDiff < 0 && actualDiff < 0)
+    //   (actualData.prev - actualData.cur) *
+    //     (actualData.prev - predictedData.cur) >
+    //   0
     //     ? `<span>플로우빗 상승 추세 예측에 <b class="green">성공</b>했어요!</span>`
     //     : `<span>플로우빗 상승 추세 예측에 <b class="red">실패</b>했어요!</span>`;
-    const isCorrect =
-      (actualData.prev - actualData.cur) *
-        (actualData.prev - predictedData.cur) >
-      0
-        ? `<span>플로우빗 상승 추세 예측에 <b class="green">성공</b>했어요!</span>`
-        : `<span>플로우빗 상승 추세 예측에 <b class="red">실패</b>했어요!</span>`;
     const hoverCardString = `
         <style>
           .flowbit_card {
@@ -1038,10 +1038,6 @@ class Chart {
                 <strong>${actualData.cur.toLocaleString()} KRW</strong>
               </div>
             </div>
-          </div>
-          <div class="flowbit_card-content">
-          ${dataDiff}
-          ${isCorrect}
           </div>
         </div>
     </div>
