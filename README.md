@@ -63,6 +63,8 @@ This library is a tool that utilizes SVG to draw line charts based on the data p
 	chart.render();
 ```
 
+![스크린샷 2024-01-03 180639](https://github.com/ehdrbdndns/flowbit-lib/assets/60888473/4f42ff77-d038-41aa-a924-13aa873a5f8c)
+
 If you want to use the zoom in/out feature, you can add the following code.
 
 ```js
@@ -79,13 +81,16 @@ If you want to use the zoom in/out feature, you can add the following code.
       hoverCardBackgroundColor:
         'linear-gradient(107deg, rgba(250, 0, 255, 0.48) -36.41%, rgba(72, 81, 155, 0.78) 75.37%)',
       zoom: true, // zoom mode
-      showDataCount: 3, // The number of datas to display initially on the screen.
-      showLabelCount: 3, // The fixed number of labels to display on the screen consistently.
+      showDataCount: 15, // The number of datas to display initially on the screen.
+      showLabelCount: 15, // The fixed number of labels to display on the screen consistently.
     });
 ```
 
+![ezgif com-video-to-gif-converter](https://github.com/ehdrbdndns/flowbit-lib/assets/60888473/4b39e6fa-3c22-49ca-b2c4-806c3c2163dd)
+
 If you want to apply gradient colors, you can add the following code.
 You need to create gradients directly using the SVG `<defs>` tag.
+
 ```js
  const dataList = [
 ...
@@ -158,5 +163,8 @@ You need to create gradients directly using the SVG `<defs>` tag.
 ...
     ];
 ```
+
+![스크린샷 2024-01-03 180730](https://github.com/ehdrbdndns/flowbit-lib/assets/60888473/ad79ffd8-f186-41b9-a944-c5fcacaebbee)
+
 ## Authors
   - [Always0ne](https://github.com/Always0ne) - **Dong gyun Yang** - <ehdrbdndns@naver.com>
