@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      body {
+        display: grid;
+        place-items: center;
+        width: 100vw;
+        height: 100vh;
+        background: #F8F8F9;
+        box-sizing: border-box;
+      }
+      .container {
+        width: 800px;
+        overflow: hidden;
+        border-radius: 15px;
+        border: 1px solid #48519b;
+        /* background-color: rgba(37, 57, 88, 0.35); */
+      }
+      .flowbit_card {
+        background: linear-gradient(
+          107deg,
+          rgba(250, 0, 255, 0.48) -36.41%,
+          rgba(72, 81, 155, 0.78) 75.37%
+        );
+        padding: 10px 15px;
+        border-radius: 8px;
+
+        font-size: 12px;
+        color: white;
+      }
+      .flowbit_card-contents {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .flowbit_card-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .flowbit_card-labels {
+        display: flex;
+        gap: 12px;
+      }
+      .flowbit_card-label {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .flowbit_card-label > span {
+        font-weight: 300;
+      }
+      .flowbit_card-label > strong {
+        font-weight: 700;
+      }
+      .flowbit_card-content > span {
+        font-weight: 400;
+      }
+      .flowbit_card-content b {
+        font-weight: 600;
+      }
+      .flowbit_card-content .green {
+        color: #00ff29;
+      }
+      .flowbit_card-content .red {
+        color: #f00;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="chart" class="container"></div>
+  </body>
+  <script src="../Chart.js"></script>
+  <script>
+    let arr = [
+      49240292.0, 49959348.0, 49415788.0, 49089796.0, 49993528.0, 50756712.0,
+      50458944.0, 49985408.0, 49682928.0, 50174952.0, 50837048.0, 50443024.0,
+      51513228.0, 51712328.0, 53213256.0, 56943008.0, 57731972.0, 61214604.0,
+      59729196.0, 60276448.0, 60464400.0, 59985860.0, 57149192.0, 57097612.0,
+      57557336.0, 59146036.0, 58196912.0, 57950468.0, 57290816.0, 57064028.0,
+      57889656.0, 59262576.0, 59147948.0, 59422064.0, 59512144.0, 59341900.0,
+      59322408.0, 59272872.0,
+    ];
+    let arr2 = [
+      49788000, 49218000, 49025000, 49779000, 50595000, 50429000, 50021000,
+      49536000, 50064000, 50692000, 50479000, 51383000, 51755000, 53087000,
+      56354000, 57666000, 60630000, 59464000, 59884000, 60102000, 59892000,
+      57392000, 57319000, 57464000, 58395000, 57982000, 57935000, 56947000,
+      56673000, 57647000, 59379000, 59060000, 59151000, 59527000, 59259000,
+      59248000, 59264000,
+    ];
+
+    let testMax = Math.max(...arr);
+    let testMin = Math.min(...arr);
+
+    let labels = [
+      '11-20',
+      '11-21',
+      '11-22',
+      '11-23',
+      '11-24',
+      '11-25',
+      '11-26',
+      '11-27',
+      '11-28',
+      '11-29',
+      '11-30',
+      '12-01',
+      '12-02',
+      '12-03',
+      '12-04',
+      '12-05',
+      '12-06',
+      '12-07',
+      '12-08',
+      '12-09',
+      '12-10',
+      '12-11',
+      '12-12',
+      '12-13',
+      '12-14',
+      '12-15',
+      '12-16',
+      '12-17',
+      '12-18',
+      '12-19',
+      '12-20',
+      '12-21',
+      '12-22',
+      '12-23',
+      '12-24',
+      '12-25',
+      '12-25',
+      '12-25',
+    ];
+
+    const testDataList = [
+      {
+        label: 'BTC 실제가격',
+        color: '#fff',
+        width: 3,
+        data: arr2,
+        min: testMin,
+        max: testMax,
+      },
+      {
+        label: 'BTC 예측가격',
+        customColor: (create) => {
+          let ns = 'http://www.w3.org/2000/svg';
+          // line
+          const linearGradientTag = document.createElementNS(
+            ns,
+            'linearGradient'
+          );
+
+          const linearStop1 = document.createElementNS(ns, 'stop');
+          linearStop1.setAttribute('stop-color', '#FA00FF');
+
+          const linearStop2 = document.createElementNS(ns, 'stop');
+          linearStop2.setAttribute('offset', '1');
+          linearStop2.setAttribute('stop-color', '#0085FF');
+          linearGradientTag.appendChild(linearStop1);
+          linearGradientTag.appendChild(linearStop2);
+
+          // legend
+          const LegendGradientTag = document.createElementNS(
+            ns,
+            'linearGradient'
+          );
+
+          const legendStop1 = document.createElementNS(ns, 'stop');
+          legendStop1.setAttribute('stop-color', '#FA00FF');
+
+          const legendStop2 = document.createElementNS(ns, 'stop');
+          legendStop2.setAttribute('offset', '1');
+          legendStop2.setAttribute('stop-color', '#0085FF');
+          LegendGradientTag.appendChild(legendStop1);
+          LegendGradientTag.appendChild(legendStop2);
+
+          // circle
+          const radialGradientTag = document.createElementNS(
+            ns,
+            'radialGradient'
+          );
+
+          const radialStop1 = document.createElementNS(ns, 'stop');
+          radialStop1.setAttribute('offset', '.3');
+          radialStop1.setAttribute('stop-color', '#FA00FF');
+
+          const radialStop2 = document.createElementNS(ns, 'stop');
+          radialStop2.setAttribute('offset', '1');
+          radialStop2.setAttribute('stop-opacity', '0');
+          radialStop2.setAttribute('stop-color', '#FA00FF');
+
+          radialGradientTag.appendChild(radialStop1);
+          radialGradientTag.appendChild(radialStop2);
+
+          return {
+            border: linearGradientTag,
+            lastPoint: radialGradientTag,
+            legend: LegendGradientTag,
+          };
+        },
+        width: 4,
+        data: arr,
+        min: testMin,
+        max: testMax,
+      },
+    ];
+
+    let chart = new Chart({
+      targetId: 'chart',
+      size: {
+        width: 1500,
+        height: 790,
+        font: 15,
+      },
+      datas: testDataList,
+      labels: labels,
+      backgroundColor: 'rgba(37, 57, 88, 0.35)',
+      hoverCardBackgroundColor:
+        'linear-gradient(107deg, rgba(250, 0, 255, 0.48) -36.41%, rgba(72, 81, 155, 0.78) 75.37%)',
+      zoom: true,
+      showDataCount: 15,
+      showLabelCount: 15,
+    });
+    chart.render();
+  </script>
+</html>
