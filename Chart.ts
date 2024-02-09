@@ -86,8 +86,7 @@ class Chart {
   private minData: number = 0; // y축에서 표현되는 가장 작은 수 (minDataForDatas - 평균 값)
 
   private defaultColor: string = '#fff'; // data Line의 기본 색상
-  private backgrondColor: string = '#48519B'; // Chart 배경 색상
-  private hoverCardBackgroundColor: string = '#48519B'; // Hover시 생성되는 카드의 배경 색상
+  private backgrondColor?: string; // Chart 배경 색상
 
   private zoom = false; // 줌인, 줌아웃 기능 추가 여부
   private showDataCount: number = 0; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
@@ -106,17 +105,12 @@ class Chart {
       zoom = false,
       showDataCount,
       showLabelCount,
-      hoverCardBackgroundColor,
     } = data;
     this.targetId = targetId;
     this.width = size.width;
     this.hegiht = size.height;
     this.fontSize = size.font;
-    this.backgrondColor = backgroundColor ? backgroundColor : '#48519B';
-    this.hoverCardBackgroundColor = hoverCardBackgroundColor
-      ? hoverCardBackgroundColor
-      : this.backgrondColor;
-
+    this.backgrondColor = backgroundColor;
     this.datas = datas;
     this.labels = labels;
     this.xAxisCount = labels.length;
@@ -134,7 +128,8 @@ class Chart {
       { property: 'xmlns', value: 'http://www.w3.org/2000/svg' },
       { property: 'viewBox', value: `0 0 ${this.width} ${this.hegiht}` },
     ]);
-    this.chart.style.backgroundColor = this.backgrondColor;
+    
+    if(this.backgrondColor) this.chart.style.backgroundColor = this.backgrondColor;
     this.chart.style.display = 'block';
     this.getTarget()?.appendChild(this.chart);
 
@@ -365,7 +360,7 @@ class Chart {
 
     // Create Label Container For Chart
     this.labelContainer = this.createSvgElement('g', [
-      { property: 'fill', value: '#fff' },
+      { property: 'fill', value: '#666666' },
       { property: 'font-size', value: this.fontSize + 'px' },
       { property: 'class', value: 'labels' },
       { property: 'text-anchor', value: 'end' },
@@ -570,7 +565,7 @@ class Chart {
   private setGuideLine = () => {
     const gTagOfLine = this.createSvgElement('g', [
       { property: 'class', value: 'guideLine' },
-      { property: 'stroke', value: '#797979' },
+      { property: 'stroke', value: '#dddddd' },
       { property: 'stroke-width', value: '0.5px' },
     ]);
 
@@ -1111,7 +1106,7 @@ class Chart {
     this.setPoints();
 
     // Draw X and Y Axis
-    this.setAxis();
+    // this.setAxis();
 
     // Set Interaction
     this.setInteraction();
