@@ -14,6 +14,8 @@ interface ChartType {
   showLabelCount?: number;
 }
 
+type DrawMode = 'dotted' | 'area' | 'line';
+
 interface ChartDataType {
   // 데이터들의 라벨
   label: string;
@@ -27,7 +29,6 @@ interface ChartDataType {
   customColor?: () => {
     border?: HTMLElement | Element;
     legend?: HTMLElement | Element;
-    lastPoint?: HTMLElement | Element;
   };
   // border 사용자 지정 색깔 ID(Defs의 ID 값)
   borderCustomColorId?: string;
@@ -35,6 +36,8 @@ interface ChartDataType {
   color?: string;
   // 차트 라인의 두께
   width: number;
+  // 차트를 어떻게 그릴지에 대한 상태 값
+  drawMode: DrawMode;
 }
 
 interface ChartPaddingType {
@@ -47,6 +50,16 @@ interface ChartPaddingType {
 interface AttributeType {
   property: string;
   value: string;
+}
+
+interface Coordinate {
+  x: number;
+  y: number;
+}
+
+interface GradientColor {
+  offset: string;
+  stopColor: string;
 }
 
 class Chart {
@@ -86,8 +99,7 @@ class Chart {
   private minData: number = 0; // y축에서 표현되는 가장 작은 수 (minDataForDatas - 평균 값)
 
   private defaultColor: string = '#fff'; // data Line의 기본 색상
-  private backgrondColor: string = '#48519B'; // Chart 배경 색상
-  private hoverCardBackgroundColor: string = '#48519B'; // Hover시 생성되는 카드의 배경 색상
+  private backgrondColor?: string; // Chart 배경 색상
 
   private zoom = false; // 줌인, 줌아웃 기능 추가 여부
   private showDataCount: number = 0; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
@@ -106,17 +118,12 @@ class Chart {
       zoom = false,
       showDataCount,
       showLabelCount,
-      hoverCardBackgroundColor,
     } = data;
     this.targetId = targetId;
     this.width = size.width;
     this.hegiht = size.height;
     this.fontSize = size.font;
-    this.backgrondColor = backgroundColor ? backgroundColor : '#48519B';
-    this.hoverCardBackgroundColor = hoverCardBackgroundColor
-      ? hoverCardBackgroundColor
-      : this.backgrondColor;
-
+    this.backgrondColor = backgroundColor;
     this.datas = datas;
     this.labels = labels;
     this.xAxisCount = labels.length;
@@ -134,7 +141,9 @@ class Chart {
       { property: 'xmlns', value: 'http://www.w3.org/2000/svg' },
       { property: 'viewBox', value: `0 0 ${this.width} ${this.hegiht}` },
     ]);
-    this.chart.style.backgroundColor = this.backgrondColor;
+
+    if (this.backgrondColor)
+      this.chart.style.backgroundColor = this.backgrondColor;
     this.chart.style.display = 'block';
     this.getTarget()?.appendChild(this.chart);
 
@@ -158,11 +167,6 @@ class Chart {
     return document.getElementById(this.targetId);
   }
 
-  /**
-   * 문자열을 HTML Element로 변환하는 함수
-   * @param {string} str HTML로 변환할 문자열
-   * @returns {HTMLElement}
-   */
   /**
    * 문자열을 HTML Element로 변환하는 함수
    * @param {string} str HTML로 변환할 문자열
@@ -281,7 +285,7 @@ class Chart {
 
   /**
    * 부모 Element에 자식 Element들을 추가하는 함수
-   * @param {SVGSVGElement | Element} parent 부노
+   * @param {SVGSVGElement | Element} parent
    * @param {SVGSVGElement[] | Element[]} childs
    * @returns
    */
@@ -365,7 +369,7 @@ class Chart {
 
     // Create Label Container For Chart
     this.labelContainer = this.createSvgElement('g', [
-      { property: 'fill', value: '#fff' },
+      { property: 'fill', value: '#666666' },
       { property: 'font-size', value: this.fontSize + 'px' },
       { property: 'class', value: 'labels' },
       { property: 'text-anchor', value: 'end' },
@@ -570,7 +574,7 @@ class Chart {
   private setGuideLine = () => {
     const gTagOfLine = this.createSvgElement('g', [
       { property: 'class', value: 'guideLine' },
-      { property: 'stroke', value: '#797979' },
+      { property: 'stroke', value: '#dddddd' },
       { property: 'stroke-width', value: '0.5px' },
     ]);
 
@@ -616,77 +620,141 @@ class Chart {
   };
 
   /**
+   * 데이터 값을 통해 좌표로 매핑하는 함수
+   */
+  private mapDatasToCoordinates = (data: number[]): Coordinate[] => {
+    let coordinates: Coordinate[] = [];
+
+    // 가장 긴 데이터 리스트와의 길이 차이
+    const diff = this.maxChartDataCount - data.length;
+
+    for (
+      let j = data.length - this.showDataCount + diff;
+      j < data.length;
+      j++
+    ) {
+      // 배열의 인덱스를 가지고 x좌표 값을 구함
+      let x =
+        ((j - (data.length - this.showDataCount + diff)) /
+          (this.showDataCount - 1)) *
+          (this.width - this.padding.left - this.padding.right) +
+        this.padding.left;
+
+      // 배열 값을 가지고 y좌표 값을 구함
+      const value = data[j];
+      let y =
+        this.hegiht -
+        this.padding.top -
+        this.padding.bottom -
+        (this.hegiht - this.padding.bottom - this.padding.top) *
+          ((value - this.minData) / (this.maxData - this.minData)) +
+        this.padding.top;
+
+      coordinates.push({ x, y });
+    }
+    return coordinates;
+  };
+
+  /**
+   * SVG Linear 그라데이션 색상 태그 생성하는 함수
+   */
+  private createLinearGradient = (
+    gradientColorList: GradientColor[]
+  ): string => {
+    const gradientId = 'flowbit-id-' + new Date().getTime();
+    const linearGradientTag = this.createSvgElement('linearGradient', [
+      { property: 'id', value: gradientId + '' },
+      { property: 'gradientTransform', value: 'rotate(90)'}
+    ]);
+    gradientColorList.forEach((v) => {
+      let linearGradientStop = this.createSvgElement('stop', [
+        { property: 'offset', value: v.offset },
+        { property: 'stop-color', value: v.stopColor },
+      ]);
+
+      this.appendChilds(linearGradientTag, [linearGradientStop]);
+    });
+
+    this.appendChilds(this.customColorContainer, [linearGradientTag]);
+
+    return gradientId;
+  };
+
+  /**
    * Chart의 데이터 라인을 그리는 함수
    */
-  private setPoints = () => {
-    // make g container
-    const gTagOfPolyLine = this.createSvgElement('g', [
+  private drawGraphLine = () => {
+    // make g container`
+    const gTagOfPath = this.createSvgElement('g', [
       { property: 'id', value: 'flowbit_datas' },
     ]);
-    gTagOfPolyLine.classList.add('datas');
+    gTagOfPath.classList.add('datas');
 
-    // SET Poly Line
+    // Draw Graph Line
     for (let i = 0; i < this.datas.length; i++) {
-      let { data, customColor, width, color } = this.datas[i];
+      let { data, width, color, drawMode } = this.datas[i];
+      color = color === undefined ? this.defaultColor : color;
       let pointList: string[] = [];
 
-      // 가장 긴 데이터 리스트와의 길이 차이
-      const diff = this.maxChartDataCount - data.length;
-      // custom Color의 y 좌표 값을 구하기 위해 사용되는 변수
-      const yList: number[] = [];
-      for (
-        let j = data.length - this.showDataCount + diff;
-        j < data.length;
-        j++
-      ) {
-        const value = data[j];
-        let x =
-          ((j - (data.length - this.showDataCount + diff)) /
-            (this.showDataCount - 1)) *
-            (this.width - this.padding.left - this.padding.right) +
-          this.padding.left;
-        let y =
-          this.hegiht -
-          this.padding.top -
-          this.padding.bottom -
-          (this.hegiht - this.padding.bottom - this.padding.top) *
-            ((value - this.minData) / (this.maxData - this.minData)) +
-          this.padding.top;
+      let coordinates = this.mapDatasToCoordinates(data);
+      coordinates.forEach((v, i) => {
+        if (i == 0) pointList.push(`M ${v.x} ${v.y} `);
+        else pointList.push(`L ${v.x} ${v.y}`);
+      });
 
-        yList.push(y);
-        pointList.push(`${x},${y}`);
-      }
+      let defaultOptions = [
+        { property: 'stroke', value: color },
+        { property: 'd', value: pointList.join(' ') },
+        { property: 'fill', value: 'none' },
+        { property: 'stroke-width', value: width + '' },
+        { property: 'stroke-linecap', value: 'round' },
+        { property: 'stroke-linejoin', value: 'round' },
+      ];
 
-      // set color
-      // let customColor = data.customColor().border;``
-      // Todo Change objectBoundingBox To userSpaceOnUse
-      if (customColor) {
-        let customColorElement = customColor().border;
-        if (customColorElement) {
-          this.datas[i].borderCustomColorId = this.setCustomColor(
-            customColorElement,
-            {
-              x1: `${this.padding.left}`,
-              y1: `${Math.min(...yList)}`,
-              x2: `${this.padding.left}`,
-              y2: `${Math.max(...yList)}`,
-            },
-            'userSpaceOnUse'
+      switch (drawMode) {
+        case 'line':
+          // drawMode가 Line일 경우 stroke 옵션을 사용해 선 색상 부여
+          break;
+        case 'area':
+          // drawMode가 area일 경우 새로운 path 태그를 만들고 fill 옵션을 사용해 area 색상 부여
+          // area 차트의 좌표 값 생성
+          let areaPointList = [...pointList];
+          areaPointList.push(
+            `V ${this.hegiht - this.padding.bottom}`
           );
-        }
+          areaPointList.push(`H ${this.padding.left}`);
+          // area 색상의 그라데이션 color 생성
+          const gradientId = this.createLinearGradient([
+            { offset: '0%', stopColor: color },
+            { offset: '100%', stopColor: 'rgba(255, 255, 255, 0)' },
+          ]);
+
+          let areaPath = this.createSvgElement('path', [
+            { property: 'd', value: areaPointList.join(' ') },
+            { property: 'fill', value: `url(#${gradientId})` },
+          ]);
+
+          this.appendChilds(gTagOfPath, [areaPath]);
+
+          break;
+        case 'dotted':
+          // 속성 값
+          // drawMode가 dotted일 경우 stroke-dasharray 옵션을 사용해 점선을 생성하고 stroke 옵션을 사용해 선 색상 부여
+          defaultOptions.push({
+            property: 'stroke-dasharray',
+            value: '3',
+          });
+          break;
+        default:
+          throw new Error("can't find drawMode, your drawMode is " + drawMode);
       }
 
       // draw polylines
-      const polyLine = this.createSvgElement('polyline', [
-        { property: 'points', value: pointList.join(' ') },
+      const path = this.createSvgElement('path', [
+        { property: 'd', value: pointList.join(' ') },
         {
           property: 'stroke',
-          value: (() => {
-            if (this.datas[i].borderCustomColorId) {
-              color = `url('#${this.datas[i].borderCustomColorId}')`;
-            }
-            return color === undefined ? this.defaultColor : color;
-          })(),
+          value: color === undefined ? this.defaultColor : color,
         },
         { property: 'fill', value: 'none' },
         { property: 'stroke-width', value: width + '' },
@@ -694,74 +762,9 @@ class Chart {
         { property: 'stroke-linejoin', value: 'round' },
       ]);
 
-      // Draw last point circle
-      let lastPointCustomColor = '';
-      if (customColor) {
-        let customColorElement = customColor().lastPoint;
-        if (customColorElement) {
-          lastPointCustomColor = this.setCustomColor(customColorElement);
-        }
-      }
-
-      // lase Circle에 사용될 좌표 값
-      const lastPointPosition = pointList
-        .slice(-1)[0]
-        .split(',')
-        .map((point) => Number(point));
-
-      // Set LastPoint Gradient
-      const lastPoint = this.createSvgElement('circle', [
-        { property: 'cx', value: lastPointPosition[0] + '' },
-        { property: 'cy', value: lastPointPosition[1] + '' },
-        { property: 'r', value: '20' },
-        {
-          property: 'fill',
-          value: (() => {
-            if (lastPointCustomColor !== '') {
-              color = `url('#${lastPointCustomColor}')`;
-            } else {
-              const circleId =
-                Math.random().toString(16).slice(2) + '-lastpoint';
-              const radialGradientTag = this.createSvgElement(
-                'radialGradient',
-                [
-                  {
-                    property: 'id',
-                    value: circleId,
-                  },
-                ]
-              );
-              const radialStop1 = this.createSvgElement('stop', [
-                {
-                  property: 'stop-color',
-                  value: color === undefined ? this.defaultColor : color,
-                },
-                {
-                  property: 'offset',
-                  value: '.3',
-                },
-              ]);
-              const radialStop2 = this.createSvgElement('stop', [
-                { property: 'offset', value: '1' },
-                { property: 'stop-opacity', value: '0' },
-                {
-                  property: 'stop-color',
-                  value: color === undefined ? this.defaultColor : color,
-                },
-              ]);
-              radialGradientTag.appendChild(radialStop1);
-              radialGradientTag.appendChild(radialStop2);
-              this.appendChilds(this.customColorContainer, [radialGradientTag]);
-              color = `url('#${circleId}')`;
-            }
-            return color === undefined ? this.defaultColor : color;
-          })(),
-        },
-      ]);
-
-      this.appendChilds(gTagOfPolyLine, [polyLine, lastPoint]);
+      this.appendChilds(gTagOfPath, [path]);
     }
-    this.appendChilds(this.datasContainer, [gTagOfPolyLine]);
+    this.appendChilds(this.datasContainer, [gTagOfPath]);
   };
 
   /**
@@ -863,7 +866,7 @@ class Chart {
 
     // 재조정 된 데이터 다시 셋팅
     document.getElementById('flowbit_datas')?.remove();
-    this.setPoints();
+    this.drawGraphLine();
   };
 
   /**
@@ -1108,10 +1111,10 @@ class Chart {
     this.setGuideLine();
 
     // 데이터 구축
-    this.setPoints();
+    this.drawGraphLine();
 
     // Draw X and Y Axis
-    this.setAxis();
+    // this.setAxis();
 
     // Set Interaction
     this.setInteraction();

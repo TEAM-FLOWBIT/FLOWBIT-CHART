@@ -12,12 +12,13 @@
         height: 100vh;
         background: #F8F8F9;
         box-sizing: border-box;
+        font-family: Pretendard;
       }
       .container {
         width: 800px;
         overflow: hidden;
         border-radius: 15px;
-        border: 1px solid #48519b;
+        /* border: 1px solid #48519b; */
         /* background-color: rgba(37, 57, 88, 0.35); */
       }
       .flowbit_card {
@@ -98,135 +99,72 @@
     let testMin = Math.min(...arr);
 
     let labels = [
-      '11-20',
-      '11-21',
-      '11-22',
-      '11-23',
-      '11-24',
-      '11-25',
-      '11-26',
-      '11-27',
-      '11-28',
-      '11-29',
-      '11-30',
-      '12-01',
-      '12-02',
-      '12-03',
-      '12-04',
-      '12-05',
-      '12-06',
-      '12-07',
-      '12-08',
-      '12-09',
-      '12-10',
-      '12-11',
-      '12-12',
-      '12-13',
-      '12-14',
-      '12-15',
-      '12-16',
-      '12-17',
-      '12-18',
-      '12-19',
-      '12-20',
-      '12-21',
-      '12-22',
-      '12-23',
-      '12-24',
-      '12-25',
-      '12-25',
-      '12-25',
+      '2024-11-20',
+      '2024-11-21',
+      '2024-11-22',
+      '2024-11-23',
+      '2024-11-24',
+      '2024-11-25',
+      '2024-11-26',
+      '2024-11-27',
+      '2024-11-28',
+      '2024-11-29',
+      '2024-11-30',
+      '2024-12-01',
+      '2024-12-02',
+      '2024-12-03',
+      '2024-12-04',
+      '2024-12-05',
+      '2024-12-06',
+      '2024-12-07',
+      '2024-12-08',
+      '2024-12-09',
+      '2024-12-10',
+      '2024-12-11',
+      '2024-12-12',
+      '2024-12-13',
+      '2024-12-14',
+      '2024-12-15',
+      '2024-12-16',
+      '2024-12-17',
+      '2024-12-18',
+      '2024-12-19',
+      '2024-12-20',
+      '2024-12-21',
+      '2024-12-22',
+      '2024-12-23',
+      '2024-12-24',
+      '2024-12-25',
+      '2024-12-25',
+      '2024-12-25',
     ];
 
     const testDataList = [
       {
         label: 'BTC 실제가격',
-        color: '#fff',
+        color: '#0056CA',
         width: 3,
         data: arr2,
         min: testMin,
         max: testMax,
-      },
-      {
-        label: 'BTC 예측가격',
-        customColor: (create) => {
-          let ns = 'http://www.w3.org/2000/svg';
-          // line
-          const linearGradientTag = document.createElementNS(
-            ns,
-            'linearGradient'
-          );
-
-          const linearStop1 = document.createElementNS(ns, 'stop');
-          linearStop1.setAttribute('stop-color', '#FA00FF');
-
-          const linearStop2 = document.createElementNS(ns, 'stop');
-          linearStop2.setAttribute('offset', '1');
-          linearStop2.setAttribute('stop-color', '#0085FF');
-          linearGradientTag.appendChild(linearStop1);
-          linearGradientTag.appendChild(linearStop2);
-
-          // legend
-          const LegendGradientTag = document.createElementNS(
-            ns,
-            'linearGradient'
-          );
-
-          const legendStop1 = document.createElementNS(ns, 'stop');
-          legendStop1.setAttribute('stop-color', '#FA00FF');
-
-          const legendStop2 = document.createElementNS(ns, 'stop');
-          legendStop2.setAttribute('offset', '1');
-          legendStop2.setAttribute('stop-color', '#0085FF');
-          LegendGradientTag.appendChild(legendStop1);
-          LegendGradientTag.appendChild(legendStop2);
-
-          // circle
-          const radialGradientTag = document.createElementNS(
-            ns,
-            'radialGradient'
-          );
-
-          const radialStop1 = document.createElementNS(ns, 'stop');
-          radialStop1.setAttribute('offset', '.3');
-          radialStop1.setAttribute('stop-color', '#FA00FF');
-
-          const radialStop2 = document.createElementNS(ns, 'stop');
-          radialStop2.setAttribute('offset', '1');
-          radialStop2.setAttribute('stop-opacity', '0');
-          radialStop2.setAttribute('stop-color', '#FA00FF');
-
-          radialGradientTag.appendChild(radialStop1);
-          radialGradientTag.appendChild(radialStop2);
-
-          return {
-            border: linearGradientTag,
-            lastPoint: radialGradientTag,
-            legend: LegendGradientTag,
-          };
-        },
-        width: 4,
-        data: arr,
-        min: testMin,
-        max: testMax,
-      },
+        drawMode: 'area'
+      }
     ];
 
     let chart = new Chart({
       targetId: 'chart',
       size: {
-        width: 1500,
-        height: 790,
-        font: 15,
+        width: 1700,
+        height: 600,
+        font: 14,
       },
       datas: testDataList,
       labels: labels,
-      backgroundColor: 'rgba(37, 57, 88, 0.35)',
       hoverCardBackgroundColor:
         'linear-gradient(107deg, rgba(250, 0, 255, 0.48) -36.41%, rgba(72, 81, 155, 0.78) 75.37%)',
       zoom: true,
-      showDataCount: 15,
-      showLabelCount: 15,
+      showDataCount: 14,
+      showLabelCount: 14,
     });
     chart.render();
   </script>
