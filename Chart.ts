@@ -14,6 +14,8 @@ interface ChartType {
   showLabelCount?: number;
 }
 
+type DrawMode = 'dotted' | 'area' | 'line';
+
 interface ChartDataType {
   // 데이터들의 라벨
   label: string;
@@ -27,7 +29,6 @@ interface ChartDataType {
   customColor?: () => {
     border?: HTMLElement | Element;
     legend?: HTMLElement | Element;
-    lastPoint?: HTMLElement | Element;
   };
   // border 사용자 지정 색깔 ID(Defs의 ID 값)
   borderCustomColorId?: string;
@@ -35,6 +36,8 @@ interface ChartDataType {
   color?: string;
   // 차트 라인의 두께
   width: number;
+  // 차트를 어떻게 그릴지에 대한 상태 값
+  drawMode: DrawMode;
 }
 
 interface ChartPaddingType {
@@ -52,6 +55,11 @@ interface AttributeType {
 interface Coordinate {
   x: number;
   y: number;
+}
+
+interface GradientColor {
+  offset: string;
+  stopColor: string;
 }
 
 class Chart {
@@ -648,56 +656,105 @@ class Chart {
   };
 
   /**
+   * SVG Linear 그라데이션 색상 태그 생성하는 함수
+   */
+  private createLinearGradient = (
+    gradientColorList: GradientColor[]
+  ): string => {
+    const gradientId = 'flowbit-id-' + new Date().getTime();
+    const linearGradientTag = this.createSvgElement('linearGradient', [
+      { property: 'id', value: gradientId + '' },
+      { property: 'gradientTransform', value: 'rotate(90)'}
+    ]);
+    gradientColorList.forEach((v) => {
+      let linearGradientStop = this.createSvgElement('stop', [
+        { property: 'offset', value: v.offset },
+        { property: 'stop-color', value: v.stopColor },
+      ]);
+
+      this.appendChilds(linearGradientTag, [linearGradientStop]);
+    });
+
+    this.appendChilds(this.customColorContainer, [linearGradientTag]);
+
+    return gradientId;
+  };
+
+  /**
    * Chart의 데이터 라인을 그리는 함수
    */
   private drawGraphLine = () => {
     // make g container`
-    const gTagOfPolyLine = this.createSvgElement('g', [
+    const gTagOfPath = this.createSvgElement('g', [
       { property: 'id', value: 'flowbit_datas' },
     ]);
-    gTagOfPolyLine.classList.add('datas');
+    gTagOfPath.classList.add('datas');
 
-    // SET Poly Line
+    // Draw Graph Line
     for (let i = 0; i < this.datas.length; i++) {
-      let { data, customColor, width, color } = this.datas[i];
+      let { data, width, color, drawMode } = this.datas[i];
+      color = color === undefined ? this.defaultColor : color;
       let pointList: string[] = [];
 
       let coordinates = this.mapDatasToCoordinates(data);
       coordinates.forEach((v, i) => {
-        if(i == 0) pointList.push(`M ${v.x} ${v.y} `);
+        if (i == 0) pointList.push(`M ${v.x} ${v.y} `);
         else pointList.push(`L ${v.x} ${v.y}`);
       });
 
-      // set color
-      // let customColor = data.customColor().border;``
-      // Todo Change objectBoundingBox To userSpaceOnUse
-      // if (customColor) {
-      //   let customColorElement = customColor().border;
-      //   if (customColorElement) {
-      //     this.datas[i].borderCustomColorId = this.setCustomColor(
-      //       customColorElement,
-      //       {
-      //         x1: `${this.padding.left}`,
-      //         y1: `${Math.min(...yList)}`,
-      //         x2: `${this.padding.left}`,
-      //         y2: `${Math.max(...yList)}`,
-      //       },
-      //       'userSpaceOnUse'
-      //     );
-      //   }
-      // }
+      let defaultOptions = [
+        { property: 'stroke', value: color },
+        { property: 'd', value: pointList.join(' ') },
+        { property: 'fill', value: 'none' },
+        { property: 'stroke-width', value: width + '' },
+        { property: 'stroke-linecap', value: 'round' },
+        { property: 'stroke-linejoin', value: 'round' },
+      ];
+
+      switch (drawMode) {
+        case 'line':
+          // drawMode가 Line일 경우 stroke 옵션을 사용해 선 색상 부여
+          break;
+        case 'area':
+          // drawMode가 area일 경우 새로운 path 태그를 만들고 fill 옵션을 사용해 area 색상 부여
+          // area 차트의 좌표 값 생성
+          let areaPointList = [...pointList];
+          areaPointList.push(
+            `V ${this.hegiht - this.padding.bottom}`
+          );
+          areaPointList.push(`H ${this.padding.left}`);
+          // area 색상의 그라데이션 color 생성
+          const gradientId = this.createLinearGradient([
+            { offset: '0%', stopColor: color },
+            { offset: '100%', stopColor: 'rgba(255, 255, 255, 0)' },
+          ]);
+
+          let areaPath = this.createSvgElement('path', [
+            { property: 'd', value: areaPointList.join(' ') },
+            { property: 'fill', value: `url(#${gradientId})` },
+          ]);
+
+          this.appendChilds(gTagOfPath, [areaPath]);
+
+          break;
+        case 'dotted':
+          // 속성 값
+          // drawMode가 dotted일 경우 stroke-dasharray 옵션을 사용해 점선을 생성하고 stroke 옵션을 사용해 선 색상 부여
+          defaultOptions.push({
+            property: 'stroke-dasharray',
+            value: '3',
+          });
+          break;
+        default:
+          throw new Error("can't find drawMode, your drawMode is " + drawMode);
+      }
 
       // draw polylines
-      const polyLine = this.createSvgElement('path', [
+      const path = this.createSvgElement('path', [
         { property: 'd', value: pointList.join(' ') },
         {
           property: 'stroke',
-          value: (() => {
-            if (this.datas[i].borderCustomColorId) {
-              color = `url('#${this.datas[i].borderCustomColorId}')`;
-            }
-            return color === undefined ? this.defaultColor : color;
-          })(),
+          value: color === undefined ? this.defaultColor : color,
         },
         { property: 'fill', value: 'none' },
         { property: 'stroke-width', value: width + '' },
@@ -705,9 +762,9 @@ class Chart {
         { property: 'stroke-linejoin', value: 'round' },
       ]);
 
-      this.appendChilds(gTagOfPolyLine, [polyLine]);
+      this.appendChilds(gTagOfPath, [path]);
     }
-    this.appendChilds(this.datasContainer, [gTagOfPolyLine]);
+    this.appendChilds(this.datasContainer, [gTagOfPath]);
   };
 
   /**
