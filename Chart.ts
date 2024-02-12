@@ -663,8 +663,9 @@ class Chart {
       let pointList: string[] = [];
 
       let coordinates = this.mapDatasToCoordinates(data);
-      coordinates.forEach(v => {
-        pointList.push(`${v.x},${v.y}`);
+      coordinates.forEach((v, i) => {
+        if(i == 0) pointList.push(`M ${v.x} ${v.y} `);
+        else pointList.push(`L ${v.x} ${v.y}`);
       });
 
       // set color
@@ -687,8 +688,8 @@ class Chart {
       // }
 
       // draw polylines
-      const polyLine = this.createSvgElement('polyline', [
-        { property: 'points', value: pointList.join(' ') },
+      const polyLine = this.createSvgElement('path', [
+        { property: 'd', value: pointList.join(' ') },
         {
           property: 'stroke',
           value: (() => {
