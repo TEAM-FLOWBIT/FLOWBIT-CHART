@@ -49,6 +49,11 @@ interface AttributeType {
   value: string;
 }
 
+interface Coordinate {
+  x: number;
+  y: number;
+}
+
 class Chart {
   // SVG Container
   private chart: SVGSVGElement;
@@ -128,8 +133,9 @@ class Chart {
       { property: 'xmlns', value: 'http://www.w3.org/2000/svg' },
       { property: 'viewBox', value: `0 0 ${this.width} ${this.hegiht}` },
     ]);
-    
-    if(this.backgrondColor) this.chart.style.backgroundColor = this.backgrondColor;
+
+    if (this.backgrondColor)
+      this.chart.style.backgroundColor = this.backgrondColor;
     this.chart.style.display = 'block';
     this.getTarget()?.appendChild(this.chart);
 
@@ -153,11 +159,6 @@ class Chart {
     return document.getElementById(this.targetId);
   }
 
-  /**
-   * 문자열을 HTML Element로 변환하는 함수
-   * @param {string} str HTML로 변환할 문자열
-   * @returns {HTMLElement}
-   */
   /**
    * 문자열을 HTML Element로 변환하는 함수
    * @param {string} str HTML로 변환할 문자열
@@ -276,7 +277,7 @@ class Chart {
 
   /**
    * 부모 Element에 자식 Element들을 추가하는 함수
-   * @param {SVGSVGElement | Element} parent 부노
+   * @param {SVGSVGElement | Element} parent
    * @param {SVGSVGElement[] | Element[]} childs
    * @returns
    */
@@ -611,10 +612,46 @@ class Chart {
   };
 
   /**
+   * 데이터 값을 통해 좌표로 매핑하는 함수
+   */
+  private mapDatasToCoordinates = (data: number[]): Coordinate[] => {
+    let coordinates: Coordinate[] = [];
+
+    // 가장 긴 데이터 리스트와의 길이 차이
+    const diff = this.maxChartDataCount - data.length;
+
+    for (
+      let j = data.length - this.showDataCount + diff;
+      j < data.length;
+      j++
+    ) {
+      // 배열의 인덱스를 가지고 x좌표 값을 구함
+      let x =
+        ((j - (data.length - this.showDataCount + diff)) /
+          (this.showDataCount - 1)) *
+          (this.width - this.padding.left - this.padding.right) +
+        this.padding.left;
+
+      // 배열 값을 가지고 y좌표 값을 구함
+      const value = data[j];
+      let y =
+        this.hegiht -
+        this.padding.top -
+        this.padding.bottom -
+        (this.hegiht - this.padding.bottom - this.padding.top) *
+          ((value - this.minData) / (this.maxData - this.minData)) +
+        this.padding.top;
+
+      coordinates.push({ x, y });
+    }
+    return coordinates;
+  };
+
+  /**
    * Chart의 데이터 라인을 그리는 함수
    */
-  private setPoints = () => {
-    // make g container
+  private drawGraphLine = () => {
+    // make g container`
     const gTagOfPolyLine = this.createSvgElement('g', [
       { property: 'id', value: 'flowbit_datas' },
     ]);
@@ -625,51 +662,29 @@ class Chart {
       let { data, customColor, width, color } = this.datas[i];
       let pointList: string[] = [];
 
-      // 가장 긴 데이터 리스트와의 길이 차이
-      const diff = this.maxChartDataCount - data.length;
-      // custom Color의 y 좌표 값을 구하기 위해 사용되는 변수
-      const yList: number[] = [];
-      for (
-        let j = data.length - this.showDataCount + diff;
-        j < data.length;
-        j++
-      ) {
-        const value = data[j];
-        let x =
-          ((j - (data.length - this.showDataCount + diff)) /
-            (this.showDataCount - 1)) *
-            (this.width - this.padding.left - this.padding.right) +
-          this.padding.left;
-        let y =
-          this.hegiht -
-          this.padding.top -
-          this.padding.bottom -
-          (this.hegiht - this.padding.bottom - this.padding.top) *
-            ((value - this.minData) / (this.maxData - this.minData)) +
-          this.padding.top;
-
-        yList.push(y);
-        pointList.push(`${x},${y}`);
-      }
+      let coordinates = this.mapDatasToCoordinates(data);
+      coordinates.forEach(v => {
+        pointList.push(`${v.x},${v.y}`);
+      });
 
       // set color
       // let customColor = data.customColor().border;``
       // Todo Change objectBoundingBox To userSpaceOnUse
-      if (customColor) {
-        let customColorElement = customColor().border;
-        if (customColorElement) {
-          this.datas[i].borderCustomColorId = this.setCustomColor(
-            customColorElement,
-            {
-              x1: `${this.padding.left}`,
-              y1: `${Math.min(...yList)}`,
-              x2: `${this.padding.left}`,
-              y2: `${Math.max(...yList)}`,
-            },
-            'userSpaceOnUse'
-          );
-        }
-      }
+      // if (customColor) {
+      //   let customColorElement = customColor().border;
+      //   if (customColorElement) {
+      //     this.datas[i].borderCustomColorId = this.setCustomColor(
+      //       customColorElement,
+      //       {
+      //         x1: `${this.padding.left}`,
+      //         y1: `${Math.min(...yList)}`,
+      //         x2: `${this.padding.left}`,
+      //         y2: `${Math.max(...yList)}`,
+      //       },
+      //       'userSpaceOnUse'
+      //     );
+      //   }
+      // }
 
       // draw polylines
       const polyLine = this.createSvgElement('polyline', [
@@ -689,72 +704,7 @@ class Chart {
         { property: 'stroke-linejoin', value: 'round' },
       ]);
 
-      // Draw last point circle
-      let lastPointCustomColor = '';
-      if (customColor) {
-        let customColorElement = customColor().lastPoint;
-        if (customColorElement) {
-          lastPointCustomColor = this.setCustomColor(customColorElement);
-        }
-      }
-
-      // lase Circle에 사용될 좌표 값
-      const lastPointPosition = pointList
-        .slice(-1)[0]
-        .split(',')
-        .map((point) => Number(point));
-
-      // Set LastPoint Gradient
-      const lastPoint = this.createSvgElement('circle', [
-        { property: 'cx', value: lastPointPosition[0] + '' },
-        { property: 'cy', value: lastPointPosition[1] + '' },
-        { property: 'r', value: '20' },
-        {
-          property: 'fill',
-          value: (() => {
-            if (lastPointCustomColor !== '') {
-              color = `url('#${lastPointCustomColor}')`;
-            } else {
-              const circleId =
-                Math.random().toString(16).slice(2) + '-lastpoint';
-              const radialGradientTag = this.createSvgElement(
-                'radialGradient',
-                [
-                  {
-                    property: 'id',
-                    value: circleId,
-                  },
-                ]
-              );
-              const radialStop1 = this.createSvgElement('stop', [
-                {
-                  property: 'stop-color',
-                  value: color === undefined ? this.defaultColor : color,
-                },
-                {
-                  property: 'offset',
-                  value: '.3',
-                },
-              ]);
-              const radialStop2 = this.createSvgElement('stop', [
-                { property: 'offset', value: '1' },
-                { property: 'stop-opacity', value: '0' },
-                {
-                  property: 'stop-color',
-                  value: color === undefined ? this.defaultColor : color,
-                },
-              ]);
-              radialGradientTag.appendChild(radialStop1);
-              radialGradientTag.appendChild(radialStop2);
-              this.appendChilds(this.customColorContainer, [radialGradientTag]);
-              color = `url('#${circleId}')`;
-            }
-            return color === undefined ? this.defaultColor : color;
-          })(),
-        },
-      ]);
-
-      this.appendChilds(gTagOfPolyLine, [polyLine, lastPoint]);
+      this.appendChilds(gTagOfPolyLine, [polyLine]);
     }
     this.appendChilds(this.datasContainer, [gTagOfPolyLine]);
   };
@@ -858,7 +808,7 @@ class Chart {
 
     // 재조정 된 데이터 다시 셋팅
     document.getElementById('flowbit_datas')?.remove();
-    this.setPoints();
+    this.drawGraphLine();
   };
 
   /**
@@ -1103,7 +1053,7 @@ class Chart {
     this.setGuideLine();
 
     // 데이터 구축
-    this.setPoints();
+    this.drawGraphLine();
 
     // Draw X and Y Axis
     // this.setAxis();
