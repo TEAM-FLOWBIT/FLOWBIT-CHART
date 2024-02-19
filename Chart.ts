@@ -619,36 +619,79 @@ class Chart {
     this.appendChilds(this.guideLineContainer, [gTagOfLine]);
   };
 
+  private drawCircle = (
+    canvas: SVGSVGElement,
+    coordinate: Coordinate,
+    color: string
+  ) => {
+    // 접점의 좌표 값(coordinates[0])
+    const contactPoint = this.createSvgElement('circle', [
+      { property: 'cx', value: coordinate.x + '' },
+      { property: 'cy', value: coordinate.y + '' },
+      { property: 'r', value: '6' },
+      { property: 'stroke', value: color },
+      { property: 'stroke-width', value: '2' },
+      { property: 'fill', value: 'white' },
+    ]);
+
+    this.appendChilds(canvas, [contactPoint]);
+  };
+
   /**
-   * 데이터 값을 통해 좌표로 매핑하는 함수
+   * 데이터의 값을 통해서 화면에 보여줄 좌표 값을 구하는 함수
+   * @param {number} data 화면에 표시할 데이터
+   * @param {number} curIndex 데이터를 담고 있는 리스트의 인덱스
+   * @returns {Coordinate} 좌표 값
    */
-  private mapDatasToCoordinates = (data: number[]): Coordinate[] => {
+  private calculateLineChartCoordinateFromData(
+    data: number,
+    curIndex: number
+  ): Coordinate {
+    // 배열의 인덱스를 가지고 x좌표 값을 구함
+    let x =
+      (curIndex / (this.showDataCount - 1)) *
+        (this.width - this.padding.left - this.padding.right) +
+      this.padding.left;
+
+    // 배열 값을 가지고 y좌표 값을 구함
+    let y =
+      this.hegiht -
+      this.padding.top -
+      this.padding.bottom -
+      (this.hegiht - this.padding.bottom - this.padding.top) *
+        ((data - this.minData) / (this.maxData - this.minData)) +
+      this.padding.top;
+    return {
+      x,
+      y,
+    };
+  }
+
+  /**
+   * 데이터 리스트에 있는 값들을 통해 좌표 리스트로 매핑하는 함수
+   * @param {number[]} data 화면에 표시할 데이터 리스트
+   * @param {number} limitDataCount 화면에 보여줄 데이터 개수를 제한하는 변수
+   * @returns {Coordinate[]} 차트에 표시할 좌표 리스트
+   */
+  private mapDatasToCoordinates = (
+    data: number[],
+    limitDataCount: number
+  ): Coordinate[] => {
     let coordinates: Coordinate[] = [];
 
     // 가장 긴 데이터 리스트와의 길이 차이
     const diff = this.maxChartDataCount - data.length;
 
     for (
-      let j = data.length - this.showDataCount + diff;
+      let j = data.length - this.showDataCount + diff + limitDataCount;
       j < data.length;
       j++
     ) {
       // 배열의 인덱스를 가지고 x좌표 값을 구함
-      let x =
-        ((j - (data.length - this.showDataCount + diff)) /
-          (this.showDataCount - 1)) *
-          (this.width - this.padding.left - this.padding.right) +
-        this.padding.left;
-
-      // 배열 값을 가지고 y좌표 값을 구함
-      const value = data[j];
-      let y =
-        this.hegiht -
-        this.padding.top -
-        this.padding.bottom -
-        (this.hegiht - this.padding.bottom - this.padding.top) *
-          ((value - this.minData) / (this.maxData - this.minData)) +
-        this.padding.top;
+      const { x, y } = this.calculateLineChartCoordinateFromData(
+        data[j],
+        j - (data.length - this.showDataCount + diff)
+      );
 
       coordinates.push({ x, y });
     }
@@ -664,7 +707,7 @@ class Chart {
     const gradientId = 'flowbit-id-' + new Date().getTime();
     const linearGradientTag = this.createSvgElement('linearGradient', [
       { property: 'id', value: gradientId + '' },
-      { property: 'gradientTransform', value: 'rotate(90)'}
+      { property: 'gradientTransform', value: 'rotate(90)' },
     ]);
     gradientColorList.forEach((v) => {
       let linearGradientStop = this.createSvgElement('stop', [
@@ -690,21 +733,31 @@ class Chart {
     ]);
     gTagOfPath.classList.add('datas');
 
+    // 화면에 노출한 데이터 개수
+    let showedDataCount = 0;
+
     // Draw Graph Line
     for (let i = 0; i < this.datas.length; i++) {
-      let { data, width, color, drawMode } = this.datas[i];
-      color = color === undefined ? this.defaultColor : color;
-      let pointList: string[] = [];
+      let { data, width, color = this.defaultColor, drawMode } = this.datas[i];
 
-      let coordinates = this.mapDatasToCoordinates(data);
+      // 데이터를 통해 차트 좌표 값 구하기
+      let coordinates = this.mapDatasToCoordinates(data, showedDataCount);
+
+      // 현재까지 보여준 데이터 개수 갱신
+      showedDataCount +=
+        this.showDataCount - (this.maxChartDataCount - data.length) - 1;
+
+      // 좌표 값을 SVG 경로로 변경한 데이터를 담는 변수
+      let svgPathFromCoordinates: string[] = [];
+
       coordinates.forEach((v, i) => {
-        if (i == 0) pointList.push(`M ${v.x} ${v.y} `);
-        else pointList.push(`L ${v.x} ${v.y}`);
+        if (i == 0) svgPathFromCoordinates.push(`M ${v.x} ${v.y} `);
+        else svgPathFromCoordinates.push(`L ${v.x} ${v.y}`);
       });
 
       let defaultOptions = [
         { property: 'stroke', value: color },
-        { property: 'd', value: pointList.join(' ') },
+        { property: 'd', value: svgPathFromCoordinates.join(' ') },
         { property: 'fill', value: 'none' },
         { property: 'stroke-width', value: width + '' },
         { property: 'stroke-linecap', value: 'round' },
@@ -718,20 +771,12 @@ class Chart {
         case 'area':
           // drawMode가 area일 경우 새로운 path 태그를 만들고 fill 옵션을 사용해 area 색상 부여
           // area 차트의 좌표 값 생성
-          let areaPointList = [...pointList];
-          areaPointList.push(
-            `V ${this.hegiht - this.padding.bottom}`
-          );
+          let areaPointList = [...svgPathFromCoordinates];
+          areaPointList.push(`V ${this.hegiht - this.padding.bottom}`);
           areaPointList.push(`H ${this.padding.left}`);
-          // area 색상의 그라데이션 color 생성
-          const gradientId = this.createLinearGradient([
-            { offset: '0%', stopColor: color },
-            { offset: '100%', stopColor: 'rgba(255, 255, 255, 0)' },
-          ]);
-
           let areaPath = this.createSvgElement('path', [
             { property: 'd', value: areaPointList.join(' ') },
-            { property: 'fill', value: `url(#${gradientId})` },
+            { property: 'fill', value: `rgba(0, 86, 202, 0.16)` },
           ]);
 
           this.appendChilds(gTagOfPath, [areaPath]);
@@ -742,7 +787,7 @@ class Chart {
           // drawMode가 dotted일 경우 stroke-dasharray 옵션을 사용해 점선을 생성하고 stroke 옵션을 사용해 선 색상 부여
           defaultOptions.push({
             property: 'stroke-dasharray',
-            value: '3',
+            value: '13',
           });
           break;
         default:
@@ -750,19 +795,12 @@ class Chart {
       }
 
       // draw polylines
-      const path = this.createSvgElement('path', [
-        { property: 'd', value: pointList.join(' ') },
-        {
-          property: 'stroke',
-          value: color === undefined ? this.defaultColor : color,
-        },
-        { property: 'fill', value: 'none' },
-        { property: 'stroke-width', value: width + '' },
-        { property: 'stroke-linecap', value: 'round' },
-        { property: 'stroke-linejoin', value: 'round' },
-      ]);
+      const path = this.createSvgElement('path', defaultOptions);
 
       this.appendChilds(gTagOfPath, [path]);
+
+      // 서로 다른 데이터의 접점을 그림
+      if (i > 0) this.drawCircle(gTagOfPath, coordinates[0], color);
     }
     this.appendChilds(this.datasContainer, [gTagOfPath]);
   };
@@ -954,27 +992,6 @@ class Chart {
 
     const actualData = dataValueList[0];
     const predictedData = dataValueList[1];
-    // const dataDiff =
-    //   predictedData.cur - actualData.cur > 0
-    //     ? `<span>예측 오차: <b class="green">+${(
-    //         predictedData.cur - actualData.cur
-    //       ).toLocaleString()} KRW</b></span>`
-    //     : `<span>예측 오차: <b class="red">${(
-    //         predictedData.cur - actualData.cur
-    //       ).toLocaleString()} KRW</b></span>`;
-    // // const predictedDiff = predictedData.cur - predictedData.prev;
-    // // const actualDiff = actualData.cur - actualData.prev;
-    // // const isCorrect =
-    // //   (predictedDiff > 0 && actualDiff > 0) ||
-    // //   (predictedDiff < 0 && actualDiff < 0)
-    // //     ? `<span>플로우빗 상승 추세 예측에 <b class="green">성공</b>했어요!</span>`
-    // //     : `<span>플로우빗 상승 추세 예측에 <b class="red">실패</b>했어요!</span>`;
-    // const isCorrect =
-    //   (actualData.prev - actualData.cur) *
-    //     (actualData.prev - predictedData.cur) >
-    //   0
-    //     ? `<span>플로우빗 상승 추세 예측에 <b class="green">성공</b>했어요!</span>`
-    //     : `<span>플로우빗 상승 추세 예측에 <b class="red">실패</b>했어요!</span>`;
     const hoverCardString = `
         <style>
           .flowbit_card {
