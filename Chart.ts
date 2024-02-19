@@ -34,6 +34,8 @@ interface ChartDataType {
   borderCustomColorId?: string;
   // 기본 color
   color?: string;
+  // area chart의 배경 색상
+  areaColor?: string;
   // 차트 라인의 두께
   width: number;
   // 차트를 어떻게 그릴지에 대한 상태 값
@@ -347,8 +349,8 @@ class Chart {
       // mix font-size and datas.length
       bottom: this.fontSize * 5,
       top: this.fontSize * 5 + this.datas.length * 25,
-      left: textLength * 2.5,
-      right: textLength,
+      left: textLength,
+      right: textLength * 2.5,
     };
   };
 
@@ -493,7 +495,10 @@ class Chart {
     const gTagOfYLabel = this.createSvgElement('g', [
       { property: 'id', value: 'flowbit_yLabel' },
       { property: 'dominant-baseline', value: 'central' },
+      { property: 'text-anchor', value: 'start' },
     ]);
+
+    const gapFromAxiosAndLabel = 40; // 축과 라벨의 사이 값
 
     // x label
     if (this.zoom) {
@@ -507,7 +512,7 @@ class Chart {
           (i / (this.showDataCount - 1)) *
             (this.width - this.padding.left - this.padding.right) +
           this.padding.left;
-        let y = this.hegiht - this.padding.bottom + this.fontSize * 2;
+        let y = this.hegiht - this.padding.bottom + gapFromAxiosAndLabel;
         const text = this.createSvgElement('text', [
           { property: 'x', value: x + '' },
           { property: 'y', value: y + '' },
@@ -523,7 +528,7 @@ class Chart {
           (i / (this.xAxisCount - 1)) *
             (this.width - this.padding.left - this.padding.right) +
           this.padding.left;
-        let y = this.hegiht - this.padding.bottom + this.fontSize * 2;
+        let y = this.hegiht - this.padding.bottom + gapFromAxiosAndLabel;
 
         const text = this.createSvgElement('text', [
           { property: 'x', value: x + '' },
@@ -539,8 +544,7 @@ class Chart {
     // y label
     for (let i = 0; i <= this.yAxisCount; i++) {
       // X 좌표 생성
-      const gapFromAxiosAndLabel = 20; // 축과 라벨의 사이 값
-      const x = this.padding.left - gapFromAxiosAndLabel;
+      const x = this.width - this.padding.right + gapFromAxiosAndLabel;
 
       // Y 좌표 생성
       const y =
@@ -549,12 +553,13 @@ class Chart {
         this.padding.top;
 
       // 텍스트 생성
-      const label =
+      const label = Math.floor(
         ((this.yAxisCount - i) / this.yAxisCount) *
           (this.maxData - this.minData) +
-        this.minData;
+          this.minData
+      );
       const text = this.createSvgElement('text');
-      text.append(Math.floor(label) + '');
+      text.append(label.toLocaleString('ko-KR'));
 
       this.setAttributes(text, [
         { property: 'x', value: x + '' },
@@ -619,6 +624,12 @@ class Chart {
     this.appendChilds(this.guideLineContainer, [gTagOfLine]);
   };
 
+  /**
+   * 그래프에 원을 그리는 함수
+   * @param {SVGSVGElement} canvas  화면에 그릴 캔버스
+   * @param {Coordinate} coordinate 원이 그려질 좌표 값
+   * @param {string} color          원의 색상 값
+   */
   private drawCircle = (
     canvas: SVGSVGElement,
     coordinate: Coordinate,
@@ -738,7 +749,13 @@ class Chart {
 
     // Draw Graph Line
     for (let i = 0; i < this.datas.length; i++) {
-      let { data, width, color = this.defaultColor, drawMode } = this.datas[i];
+      let {
+        data,
+        width,
+        color = this.defaultColor,
+        drawMode,
+        areaColor = 'rgba(0, 86, 202, 0.16)',
+      } = this.datas[i];
 
       // 데이터를 통해 차트 좌표 값 구하기
       let coordinates = this.mapDatasToCoordinates(data, showedDataCount);
@@ -773,10 +790,10 @@ class Chart {
           // area 차트의 좌표 값 생성
           let areaPointList = [...svgPathFromCoordinates];
           areaPointList.push(`V ${this.hegiht - this.padding.bottom}`);
-          areaPointList.push(`H ${this.padding.left}`);
+          areaPointList.push(`H ${coordinates[0].x}`);
           let areaPath = this.createSvgElement('path', [
             { property: 'd', value: areaPointList.join(' ') },
-            { property: 'fill', value: `rgba(0, 86, 202, 0.16)` },
+            { property: 'fill', value: areaColor },
           ]);
 
           this.appendChilds(gTagOfPath, [areaPath]);
