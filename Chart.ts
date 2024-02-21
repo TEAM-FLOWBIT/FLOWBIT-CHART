@@ -82,6 +82,7 @@ class Chart {
 
   private targetId: string;
 
+  // layout
   private width: number;
   private hegiht: number;
   private fontSize: number;
@@ -107,8 +108,11 @@ class Chart {
   private showDataCount: number = 0; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
   private showLabelCount: number = 0; // 화면에 보여줄 라벨 개수 (zoom 모드에서만 사용하는 변수)
 
-  private guidLineColor: string = '#797979';
-  private guidLineWidth: string = '.5px';
+  private guidLineColor: string = '#797979'; // chart의 가이드 라인의 색상
+  private guidLineWidth: string = '.5px'; // chart의 가이드 라인의 두께
+
+  // interaction toggle
+  private isMouseHover: boolean = false;
 
   constructor(data: ChartType) {
     const {
@@ -498,7 +502,7 @@ class Chart {
       { property: 'text-anchor', value: 'start' },
     ]);
 
-    const gapFromAxiosAndLabel = 40; // 축과 라벨의 사이 값
+    const gapFromAxiosAndLabel = 35; // 축과 라벨의 사이 값
 
     // x label
     if (this.zoom) {
@@ -601,25 +605,6 @@ class Chart {
 
       gTagOfLine.appendChild(line);
     }
-
-    // y축 가이드 라인
-    // for (let i = 0; i <= this.xAxisCount - 1; i++) {
-    //   const x =
-    //     (i / (this.xAxisCount - 1)) *
-    //       (this.width - this.padding.left - this.padding.right) +
-    //     this.padding.left;
-    //   const y1 = this.hegiht - this.padding.bottom;
-    //   const y2 = this.padding.top;
-
-    //   const line = this.createSvgElement('line', [
-    //     { property: 'x1', value: x + '' },
-    //     { property: 'x2', value: x + '' },
-    //     { property: 'y1', value: y1 + '' },
-    //     { property: 'y2', value: y2 + '' },
-    //   ]);
-
-    //   gTagOfLine.appendChild(line);
-    // }
 
     this.appendChilds(this.guideLineContainer, [gTagOfLine]);
   };
@@ -758,11 +743,12 @@ class Chart {
       } = this.datas[i];
 
       // 데이터를 통해 차트 좌표 값 구하기
-      let coordinates = this.mapDatasToCoordinates(data, showedDataCount);
-
-      // 현재까지 보여준 데이터 개수 갱신
-      showedDataCount +=
-        this.showDataCount - (this.maxChartDataCount - data.length) - 1;
+      let coordinates: Coordinate[];
+      if (this.isMouseHover) {
+        coordinates = this.mapDatasToCoordinates(data, 0);
+      } else {
+        coordinates = this.mapDatasToCoordinates(data, showedDataCount);
+      }
 
       // 좌표 값을 SVG 경로로 변경한 데이터를 담는 변수
       let svgPathFromCoordinates: string[] = [];
@@ -817,7 +803,17 @@ class Chart {
       this.appendChilds(gTagOfPath, [path]);
 
       // 서로 다른 데이터의 접점을 그림
-      if (i > 0) this.drawCircle(gTagOfPath, coordinates[0], color);
+      if (i > 0) {
+        let contactCoordinate = this.calculateLineChartCoordinateFromData(
+          data[data.length - this.showDataCount + showedDataCount],
+          showedDataCount
+        );
+        this.drawCircle(gTagOfPath, contactCoordinate, color);
+      }
+
+      // 현재까지 보여준 데이터 개수 갱신
+      showedDataCount +=
+        this.showDataCount - (this.maxChartDataCount - data.length) - 1;
     }
     this.appendChilds(this.datasContainer, [gTagOfPath]);
   };
@@ -927,161 +923,202 @@ class Chart {
   /**
    * Chart의 Mouse Hover 기능을 설정하는 함수
    * 마우스를 올린 지점에 데이터의 Info 창을 보여줌
+   * @param {any} e 마우스 호버 이벤트 객체
+   * @returns
    */
   private setMouseHoverAction = (e: any) => {
     const rect = e.target.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const persent = mouseX / rect.width;
+
+    // 마우스의 위치를 토대로 화면에 표시할 인덱스를 나타냄
     const index = Math.abs(Math.round((this.showDataCount - 1) * persent));
-    const dataValueList: {
+
+    const dataInfoList: {
       cur: number;
       prev: number;
       legend: string;
     }[] = [];
 
     // 2. Draw Hover line Like Y Axios Guidline
-    const xPositionOfIndex =
+    const pathOfGuidLine = `M ${
       (index / (this.showDataCount - 1)) *
         (this.width - this.padding.left - this.padding.right) +
-      this.padding.left;
-    const yPositionOfGuidLine = `M ${xPositionOfIndex},${
-      this.padding.top
-    }L${xPositionOfIndex},${this.hegiht - this.padding.bottom}`;
-    this.hoverGuidLineContainer.setAttribute('d', yPositionOfGuidLine);
+      this.padding.left
+    },${this.padding.top} V${this.hegiht - this.padding.bottom}`;
+    this.hoverGuidLineContainer.setAttribute('d', pathOfGuidLine);
     this.hoverGuidLineContainer.setAttribute('visibility', 'visible');
 
-    // 3. Point from data line
-    this.datas.forEach((_, i) => {
-      const { data, color, borderCustomColorId, label } = _;
+    // 3. Set Pointer on the data line
+    this.datas.forEach((_) => {
+      const { data, label } = _;
       const diff = this.maxChartDataCount - data.length;
       const indexOfData = data.length - this.showDataCount + index + diff;
-      const dataOfIndex = data[indexOfData];
-      const hoverPoint = document.getElementById(`flowbit_hoverPoint${i}`);
 
       // Todo 라이브러리 화를 고려하지 않고 특정 기능에만 작동되는 hover Card로 우선 개발됨
       // 추후 커스텀화를 고려해 코드를 수정해야 함, 우선 여기서는 실제 가격이 먼저 나옴
-      dataValueList.push({
-        cur: dataOfIndex,
+      dataInfoList.push({
+        cur: data[indexOfData],
         prev: data[indexOfData - 1],
         legend: label,
       });
-
-      this.hoverPointsContainer.setAttribute('visibility', 'visible');
-
-      // data가 전체 길이상에 존재하지 않을 경우에는 point를 생성하지 않음
-      if (dataOfIndex === undefined) {
-        hoverPoint?.setAttribute('cx', '0');
-        hoverPoint?.setAttribute('cy', '0');
-        return;
-      }
-
-      // get yPosition Of Point
-      const yPositionOfIndex =
-        this.hegiht -
-        this.padding.top -
-        this.padding.bottom -
-        (this.hegiht - this.padding.bottom - this.padding.top) *
-          ((dataOfIndex - this.minData) / (this.maxData - this.minData)) +
-        this.padding.top;
-
-      // Set Point Property
-      hoverPoint?.setAttribute('cx', `${xPositionOfIndex}`);
-      hoverPoint?.setAttribute('cy', `${yPositionOfIndex}`);
-      hoverPoint?.setAttribute(
-        'stroke',
-        (() => {
-          return borderCustomColorId
-            ? `url(#${borderCustomColorId})`
-            : color
-            ? color
-            : this.defaultColor;
-        })()
-      );
     });
 
     // 4. Pop info dialog for datas
-    // TODO 라이브러리 화를 고려하지 않고 특정 기능에만 작동되는 hover Card로 우선 개발됨
-    // 추후 커스텀화를 고려해 코드를 수정해야 함, 우선 여기서는 실제 가격이 먼저 나옴
-    if (dataValueList[0].cur === undefined) {
-      this.hoverCardContainer.remove();
-      return;
+    // 예측 성공 여부 확인
+    let hoverCardString = '';
+    if (dataInfoList[0].cur === undefined) {
+      hoverCardString = `
+      <style>
+        .flowbit-hover-card {
+          width: 256px;
+          background-color: #323743;
+          border-radius: 4px;
+          padding: 16px 20px;
+          color: white;
+          visibility: hidden;
+          position: absolute;
+        }
+        .flowbit-hover-card__title {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .flowbit-hover-card__date {
+          font-size: 16px;
+          letter-spacing: 2%;
+        }
+        .flowbit-hover-card__badge {
+          font-size: 16px;
+          font-weight: bold;
+          letter-spacing: 2%;
+        }
+        .flowbit-hover-card__badge.red {
+          color: #E74C4C;
+        }
+        .flowbit-hover-card__badge.green {
+          color: #29D86F;
+        }
+        .flowbit-hover-card__contentList {
+          list-style-type: none;
+          padding: 0;
+          margin: 0;
+        }
+        .flowbit-hover-card__content {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .flowbit-hover-card__content h2 {
+          font-size: 14px;
+          font-weight: normal;
+          letter-spacing: 2%;
+        }
+        .flowbit-hover-card__content.gray h2 {
+          color: gray;
+        }
+      </style>
+      <div>
+        <div class="flowbit-hover-card__title">
+          <h1 class="flowbit-hover-card__date">${
+            this.labels[this.labels.length - this.showDataCount + index]
+          }</h1>
+          <span class="flowbit-hover-card__badge green">매수하세요</span>
+        </div>
+        <ul class="flowbit-hover-card__contentList">
+          <li class="flowbit-hover-card__content gray">
+            <h2>${dataInfoList[0].legend}</h2>
+            <h2>-</h2>
+          </li>
+          <li class="flowbit-hover-card__content">
+            <h2>${dataInfoList[1].legend}</h2>
+            <h2>${dataInfoList[1].cur.toLocaleString()}</h2>
+          </li>
+        </ul>
+      </div>
+        `;
+    } else {
+      let isCorrect =
+        (dataInfoList[0].prev - dataInfoList[0].cur) *
+          (dataInfoList[0].prev - dataInfoList[1].cur) >
+        0;
+      hoverCardString = `
+      <style>
+        .flowbit-hover-card {
+          width: 256px;
+          background-color: #323743;
+          border-radius: 4px;
+          padding: 16px 20px;
+          color: white;
+          visibility: hidden;
+          position: absolute;
+        }
+        .flowbit-hover-card__title {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .flowbit-hover-card__date {
+          font-size: 16px;
+          letter-spacing: 2%;
+        }
+        .flowbit-hover-card__badge {
+          font-size: 16px;
+          font-weight: bold;
+          letter-spacing: 2%;
+        }
+        .flowbit-hover-card__badge.red {
+          color: #E74C4C;
+        }
+        .flowbit-hover-card__badge.green {
+          color: #29D86F;
+        }
+        .flowbit-hover-card__contentList {
+          list-style-type: none;
+          padding: 0;
+          margin: 0;
+        }
+        .flowbit-hover-card__content {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .flowbit-hover-card__content h2 {
+          font-size: 14px;
+          font-weight: normal;
+          letter-spacing: 2%;
+        }
+        .flowbit-hover-card__content.gray h2 {
+          color: gray;
+        }
+      </style>
+      <div>
+        <div class="flowbit-hover-card__title">
+          <h1 class="flowbit-hover-card__date">${
+            this.labels[this.labels.length - this.showDataCount + index]
+          }</h1>
+          <span class="flowbit-hover-card__badge ${
+            isCorrect ? 'green' : 'red'
+          }">${isCorrect ? '예측 성공' : '예측 실패'}</span>
+        </div>
+        <ul class="flowbit-hover-card__contentList">
+          <li class="flowbit-hover-card__content">
+            <h2>${dataInfoList[0].legend}</h2>
+            <h2>${dataInfoList[0].cur.toLocaleString()}</h2>
+          </li>
+          <li class="flowbit-hover-card__content">
+            <h2>${dataInfoList[1].legend}</h2>
+            <h2>${dataInfoList[1].cur.toLocaleString()}</h2>
+          </li>
+        </ul>
+      </div>
+        `;
     }
 
-    const actualData = dataValueList[0];
-    const predictedData = dataValueList[1];
-    const hoverCardString = `
-        <style>
-          .flowbit_card {
-            background: linear-gradient(
-              107deg,
-              rgba(250, 0, 255, 0.48) -36.41%,
-              rgba(72, 81, 155, 0.78) 75.37%
-            );
-            padding: 10px 15px;
-            border-radius: 8px;
-            visibility: hidden;
-            position: absolute;
-
-            font-size: 12px;
-            color: white;
-          }
-          .flowbit_card-contents {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-          }
-          .flowbit_card-content {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-          }
-          .flowbit_card-labels {
-            display: flex;
-            gap: 12px;
-          }
-          .flowbit_card-label {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-          }
-          .flowbit_card-label > span {
-            font-weight: 300;
-          }
-          .flowbit_card-label > strong {
-            font-weight: 700;
-          }
-          .flowbit_card-content > span {
-            font-weight: 400;
-          }
-          .flowbit_card-content b {
-            font-weight: 600;
-          }
-          .flowbit_card-content .green {
-            color: #00ff29;
-          }
-          .flowbit_card-content .red {
-            color: #f00;
-          }
-        </style>
-        <div class="flowbit_card-contents">
-          <div class="flowbit_card-content">
-            <div class="flowbit_card-labels">
-              <div class="flowbit_card-label">
-                <span>BTC 예측가격</span>
-                <strong>${predictedData.cur.toLocaleString()} KRW</strong>
-              </div>
-              <div class="flowbit_card-label">
-                <span>BTC 실제가격</span>
-                <strong>${actualData.cur.toLocaleString()} KRW</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-    </div>
-      `;
+    // TODO 추후에는 카드를 매번 새롭게 만드는 것이 아닌 위치만 조정하는 것으로 코드를 변경하는 것이 좋음
     this.hoverCardContainer.remove();
     this.hoverCardContainer = this.stringToHTML(hoverCardString, {
-      classList: ['flowbit_card'],
+      classList: ['flowbit-hover-card'],
     });
     this.getTarget()?.append(this.hoverCardContainer);
 
@@ -1114,14 +1151,24 @@ class Chart {
     }
 
     // Set Mouse Hover Event
-    this.mouseEventAreaContainer.addEventListener(
-      'mousemove',
-      this.setMouseHoverAction
-    );
+    this.mouseEventAreaContainer.addEventListener('mousemove', (e) => {
+      this.setMouseHoverAction(e);
+      this.isMouseHover = true;
+
+      // 재조정 된 데이터 다시 셋팅
+      document.getElementById('flowbit_datas')?.remove();
+      this.drawGraphLine();
+    });
+
     this.mouseEventAreaContainer.addEventListener('mouseleave', () => {
       this.hoverGuidLineContainer.setAttribute('visibility', 'hidden');
       this.hoverPointsContainer.setAttribute('visibility', 'hidden');
       this.hoverCardContainer.style.visibility = 'hidden';
+      this.isMouseHover = false;
+
+      // 재조정 된 데이터 다시 셋팅
+      document.getElementById('flowbit_datas')?.remove();
+      this.drawGraphLine();
     });
   };
 

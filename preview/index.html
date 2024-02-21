@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
     <style>
+      * {
+        font-family: Pretendard;
+      }
       body {
         display: grid;
         place-items: center;
@@ -15,65 +18,116 @@
         font-family: Pretendard;
       }
       .container {
-        width: 800px;
-        overflow: hidden;
-        border-radius: 15px;
-        /* border: 1px solid #48519b; */
-        /* background-color: rgba(37, 57, 88, 0.35); */
+        width: 100%;
       }
-      .flowbit_card {
-        background: linear-gradient(
-          107deg,
-          rgba(250, 0, 255, 0.48) -36.41%,
-          rgba(72, 81, 155, 0.78) 75.37%
-        );
-        padding: 10px 15px;
-        border-radius: 8px;
-
-        font-size: 12px;
+      .hover-test {
+        width: 100%;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+      }
+      .flowbit-hover-card {
+        width: 256px;
+        background-color: #323743;
+        border-radius: 4px;
+        padding: 16px 20px;
+        /* visibility: hidden;
+        position: absolute; */
         color: white;
       }
-      .flowbit_card-contents {
+      .flowbit-hover-card__title {
         display: flex;
-        flex-direction: column;
-        gap: 8px;
+        justify-content: space-between;
+        align-items: center;
       }
-      .flowbit_card-content {
+      .flowbit-hover-card__date {
+        font-size: 16px;
+        letter-spacing: 2%;
+      }
+      .flowbit-hover-card__badge {
+        font-size: 16px;
+        font-weight: bold;
+        letter-spacing: 2%;
+      }
+      .flowbit-hover-card__badge.red {
+        color: #E74C4C;
+      }
+      .flowbit-hover-card__badge.green {
+        color: #29D86F;
+      }
+      .flowbit-hover-card__contentList {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+
+      }
+      .flowbit-hover-card__content {
         display: flex;
-        flex-direction: column;
-        gap: 4px;
+        align-items: center;
+        justify-content: space-between;
       }
-      .flowbit_card-labels {
-        display: flex;
-        gap: 12px;
+      .flowbit-hover-card__content h2 {
+        font-size: 14px;
+        font-weight: normal;
+        letter-spacing: 2%;
       }
-      .flowbit_card-label {
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-      }
-      .flowbit_card-label > span {
-        font-weight: 300;
-      }
-      .flowbit_card-label > strong {
-        font-weight: 700;
-      }
-      .flowbit_card-content > span {
-        font-weight: 400;
-      }
-      .flowbit_card-content b {
-        font-weight: 600;
-      }
-      .flowbit_card-content .green {
-        color: #00ff29;
-      }
-      .flowbit_card-content .red {
-        color: #f00;
+      .flowbit-hover-card__content.gray h2 {
+        color: gray;
       }
     </style>
   </head>
   <body>
     <div id="chart" class="container"></div>
+    <!-- <div class="hover-test">
+      <div class="flowbit-hover-card">
+        <div class="flowbit-hover-card__title">
+          <h1 class="flowbit-hover-card__date">2024-02-07</h1>
+          <span class="flowbit-hover-card__badge green">예측 성공</span>
+        </div>
+        <ul class="flowbit-hover-card__contentList">
+          <li class="flowbit-hover-card__content">
+            <h2>BTC 실제 가격</h2>
+            <h2>555,555,555</h2>
+          </li>
+          <li class="flowbit-hover-card__content">
+            <h2>BTC 예측 가격</h2>
+            <h2>555,555,555</h2>
+          </li>
+        </ul>
+      </div>
+      <div class="flowbit-hover-card">
+        <div class="flowbit-hover-card__title">
+          <h1 class="flowbit-hover-card__date">2024-02-07</h1>
+          <span class="flowbit-hover-card__badge red">예측 실패</span>
+        </div>
+        <ul class="flowbit-hover-card__contentList">
+          <li class="flowbit-hover-card__content">
+            <h2>BTC 실제 가격</h2>
+            <h2>555,555,555</h2>
+          </li>
+          <li class="flowbit-hover-card__content">
+            <h2>BTC 예측 가격</h2>
+            <h2>555,555,555</h2>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="flowbit-hover-card">
+      <div class="flowbit-hover-card__title">
+        <h1 class="flowbit-hover-card__date">2024-02-07</h1>
+        <span class="flowbit-hover-card__badge red">예측 실패</span>
+      </div>
+      <ul class="flowbit-hover-card__contentList">
+        <li class="flowbit-hover-card__content gray">
+          <h2>BTC 실제 가격</h2>
+          <h2>-</h2>
+        </li>
+        <li class="flowbit-hover-card__content">
+          <h2>BTC 예측 가격</h2>
+          <h2>555,555,555</h2>
+        </li>
+      </ul>
+    </div> -->
   </body>
   <script src="../Chart.js"></script>
   <script>
@@ -83,8 +137,8 @@
       51513228.0, 51712328.0, 53213256.0, 56943008.0, 57731972.0, 61214604.0,
       59729196.0, 60276448.0, 60464400.0, 59985860.0, 57149192.0, 57097612.0,
       57557336.0, 59146036.0, 58196912.0, 57950468.0, 57290816.0, 57064028.0,
-      57889656.0, 59262576.0, 59147948.0, 59422064.0, 59512144.0, 59341900.0,
-      59264000, 59272872.0, 60276448.0, 60464400.0, 59464000
+      57889656.0, 59262576.0, 59147948.0, 59422064.0, 59512144.0, 59341900.0, // 36
+      59264000, 59272872.0, 60276448.0, 60464400.0, 59464000                  // 41
     ];
     let arr = [
       49788000, 49218000, 49025000, 49779000, 50595000, 50429000, 50021000,
@@ -108,7 +162,7 @@
       '2024-11-26',
       '2024-11-27',
       '2024-11-28',
-      '2024-11-29',
+      '2024-11-29', // 10
       '2024-11-30',
       '2024-12-01',
       '2024-12-02',
@@ -118,7 +172,7 @@
       '2024-12-06',
       '2024-12-07',
       '2024-12-08',
-      '2024-12-09',
+      '2024-12-09', // 10
       '2024-12-10',
       '2024-12-11',
       '2024-12-12',
@@ -135,13 +189,16 @@
       '2024-12-23',
       '2024-12-24',
       '2024-12-25',
-      '2024-12-25',
-      '2024-12-25',
+      '2025-01-01',
+      '2025-01-02',
+      '2025-01-03',
+      '2025-01-04',
+      '2025-01-05',
     ];
 
     const testDataList = [
       {
-        label: 'BTC 실제가격',
+        label: 'BTC 실제 가격',
         color: '#0056CA',
         width: 3,
         data: arr,
@@ -151,7 +208,7 @@
         areaColor: 'rgba(0, 86, 202, 0.16)'
       },
       {
-        label: 'BTC 예측가격',
+        label: 'BTC 예측 가격',
         color: '#E44B79',
         width: 2,
         data: arr2,
