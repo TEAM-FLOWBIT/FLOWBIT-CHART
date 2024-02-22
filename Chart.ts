@@ -822,10 +822,13 @@ class Chart {
    * Chart의 Legend를 설정하는 함수
    */
   private setLegend = () => {
-    const legendHeight = 25;
-    const lineWidth = 28;
-    const gap = 8;
-    const fontSize = 14;
+    const legendHeight = 50;
+    const lineWidth = 50;
+    const gap = 24;
+    const fontSize = 18;
+    
+    // legend 사이의 갭들을 나타내는 변수
+    let accGap = 0;
 
     const gTagOfLegend = this.createSvgElement('g', [
       { property: 'class', value: `legend` },
@@ -833,61 +836,43 @@ class Chart {
 
     for (let i = 0; i < this.datas.length; i++) {
       let data = this.datas[i];
+      const { label, drawMode } = data;
 
-      const x = this.width - this.padding.right;
-      const y = this.padding.top - this.padding.bottom / 2 - i * legendHeight;
-      const text = this.createSvgElement('text', [
-        { property: 'font-size', value: `${fontSize}` },
-        { property: 'fill', value: `#fff` },
-        { property: 'text-anchor', value: `end` },
-        { property: 'x', value: `${x}` },
-        { property: 'y', value: `${y}` },
-        { property: 'dominant-baseline', value: 'middle' },
-      ]);
-      text.append(data.label);
-
-      const bbox = this.getBBox(text);
-      const textLength = bbox.width;
-
-      // set color
-      let legendCustomColor = '';
-      if (data.customColor) {
-        let customColorElement = data.customColor().legend;
-        if (customColorElement) {
-          legendCustomColor = this.setCustomColor(
-            customColorElement,
-            {
-              x1: `${x - gap - lineWidth - textLength}`,
-              x2: `${x - gap - textLength}`,
-              y1: `${y}`,
-              y2: `${y}`,
-            },
-            'userSpaceOnUse'
-          );
-        }
-      }
+      // Get text position
+      const x = this.padding.left;
+      const y = this.padding.top - legendHeight;
 
       const line = this.createSvgElement('line', [
-        { property: 'x1', value: `${x - gap - lineWidth - textLength}` },
+        { property: 'x1', value: `${x + accGap}` },
         { property: 'y1', value: `${y}` },
-        { property: 'x2', value: `${x - gap - textLength}` },
+        { property: 'x2', value: `${x + lineWidth + accGap}` },
         { property: 'y2', value: `${y}` },
         {
           property: 'stroke',
-          value: (() => {
-            let color: string | undefined;
-            if (legendCustomColor !== '') {
-              color = `url('#${legendCustomColor}')`;
-            } else {
-              color = data.color;
-            }
-            return color === undefined ? this.defaultColor : color;
-          })(),
+          value: `${this.datas[i].color}`,
         },
-        { property: 'stroke-width', value: `4px` },
-        { property: 'stroke-linecap', value: 'round' },
-        { property: 'stroke-linejoin', value: 'round' },
+        { property: 'stroke-width', value: `2px` },
+        drawMode === 'dotted' ? {
+          property: 'stroke-dasharray',
+          value: '7',
+        } : {property: 'stroke-dasharray', value: '0'}
       ]);
+
+      accGap += gap;
+
+      const text = this.createSvgElement('text', [
+        { property: 'font-size', value: `${fontSize}` },
+        { property: 'fill', value: `#616161` },
+        { property: 'x', value: `${x + lineWidth + accGap}` },
+        { property: 'y', value: `${y}` },
+        { property: 'dominant-baseline', value: 'middle' },
+      ]);
+      text.append(label);
+      const bbox = this.getBBox(text);
+      const textLength = bbox.width;
+
+      accGap += gap + lineWidth + textLength;
+
       this.appendChilds(gTagOfLegend, [text, line]);
     }
     this.appendChilds(this.legendContainer, [gTagOfLegend]);
