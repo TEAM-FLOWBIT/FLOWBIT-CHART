@@ -146,6 +146,7 @@ class Chart {
       { property: 'id', value: 'flowbit_svg' },
       { property: 'xmlns', value: 'http://www.w3.org/2000/svg' },
       { property: 'viewBox', value: `0 0 ${this.width} ${this.hegiht}` },
+      { property: 'style', value: 'position: relative'}
     ]);
 
     if (this.backgrondColor)
@@ -338,6 +339,7 @@ class Chart {
 
     const averageOfMinMax =
       (this.maxDataForDatas - this.minDataForDatas) / this.yAxisCount;
+
     this.maxData = this.maxDataForDatas + averageOfMinMax;
     this.minData = this.minDataForDatas - averageOfMinMax;
   }
@@ -1105,15 +1107,19 @@ class Chart {
     this.hoverCardContainer = this.stringToHTML(hoverCardString, {
       classList: ['flowbit-hover-card'],
     });
+
     this.getTarget()?.append(this.hoverCardContainer);
 
+    // 마우스 Y 에서 차트 Y 빼면 댐
+    // console.log(this.chart.getBoundingClientRect().y);
+
     this.hoverCardContainer.style.visibility = 'visible';
-    this.hoverCardContainer.style.top = `${e.pageY + 10}px`;
+    this.hoverCardContainer.style.top = `${e.offsetY + 20}px`;
     if (persent > 0.5) {
-      this.hoverCardContainer.style.left = `${e.pageX - 10}px`;
+      this.hoverCardContainer.style.left = `${e.clientX - 10}px`;
       this.hoverCardContainer.style.translate = '-100%';
     } else {
-      this.hoverCardContainer.style.left = `${e.pageX + 10}px`;
+      this.hoverCardContainer.style.left = `${e.clientX + 10}px`;
       this.hoverCardContainer.style.translate = '0';
     }
   };
