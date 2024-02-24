@@ -76,7 +76,10 @@ class Chart {
   private mouseEventAreaContainer: SVGSVGElement;
   private hoverGuidLineContainer: SVGSVGElement;
   private hoverPointsContainer: SVGSVGElement;
-  private hoverCardContainer: HTMLElement;
+
+  // HTML Container
+  private hoverCardContainer: HTMLElement; // 차트에 호버 시 생성되는 Info Card의 컨테이너
+  private controlBarContainer: HTMLElement; // 컨트롤 바의 컨테이너
 
   private svgNs: string = 'http://www.w3.org/2000/svg';
 
@@ -163,7 +166,9 @@ class Chart {
     this.mouseEventAreaContainer = this.createSvgElement('g');
     this.hoverGuidLineContainer = this.createSvgElement('g');
     this.hoverPointsContainer = this.createSvgElement('g');
+
     this.hoverCardContainer = document.createElement('div');
+    this.controlBarContainer = document.createElement('div');
   }
 
   /**
@@ -182,16 +187,18 @@ class Chart {
    */
   private stringToHTML(
     str: string,
-    option: { classList?: string[]; id?: string }
+    option?: { classList?: string[]; id?: string }
   ) {
-    const { classList, id } = option;
     const dom = document.createElement('div');
-    if (classList) {
-      classList.forEach((item) => {
-        dom.classList.add(item);
-      });
+    if(option !== undefined) {
+      const { classList, id } = option;
+      if (classList) {
+        classList.forEach((item) => {
+          dom.classList.add(item);
+        });
+      }
+      id && dom.setAttribute('id', id);
     }
-    id && dom.setAttribute('id', id);
     dom.innerHTML = str;
     return dom;
   }
@@ -417,8 +424,6 @@ class Chart {
       this.appendChilds(this.hoverPointsContainer, [point]);
     });
 
-    this.hoverCardContainer = document.createElement('div');
-
     // Create Mouse Event Area Container For Chart
     this.mouseEventAreaContainer = this.createSvgElement('rect', [
       { property: 'x', value: `${this.padding.left}` },
@@ -440,6 +445,62 @@ class Chart {
       'url("https://www.bithumb.com/react/charting_library/sta…es/crosshair.6c091f7d5427d0c5e6d9dc3a90eb2b20.cur"),crosshair';
     this.mouseEventAreaContainer.style.opacity = '0';
 
+    // set control bar layout
+    let htmlString = `
+      <style>
+      .flowbit-control-bar {
+        position: absolute;
+        transform: translate(-50%, -160%);
+        left: 50%;
+        bottom: 0;
+        display: flex;
+        gap: 24px;
+        z-index: 1;
+      }
+      .flowbit-control-bar__wrapper {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .flowbit-control-bar__btn {
+        width: 32px;
+        height: 32px;
+        border: 1px solid #c1c1c1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        background-color: white;
+        cursor: pointer;
+      }
+      </style>
+      <div class="flowbit-control-bar">
+        <div class="flowbit-control-bar__wrapper">
+        <button class="flowbit-control-bar__btn">
+          <img src="../asset/icon/Minus.svg" alt="">
+        </button>
+        <button class="flowbit-control-bar__btn">
+          <img src="../asset/icon/Plus.svg" alt="">
+        </button>
+        </div>
+        <div class="flowbit-control-bar__wrapper">
+          <button class="flowbit-control-bar__btn">
+            <img src="../asset/icon/CaretLeft.svg" alt="">
+          </button>
+          <button class="flowbit-control-bar__btn">
+            <img src="../asset/icon/CaretRight.svg" alt="">
+          </button>
+        </div>
+        <div class="flowbit-control-bar__wrapper">
+          <button class="flowbit-control-bar__btn">
+            <img src="../asset/icon/ArrowCounterClockwise.svg" alt="">
+          </button>
+        </div>
+      </div>
+    `
+    let controlBarHtml = this.stringToHTML(htmlString);
+    this.controlBarContainer.appendChild(controlBarHtml);
+
     this.appendToChart(this.customColorContainer);
     this.appendToChart(this.labelContainer);
     this.appendToChart(this.legendContainer);
@@ -449,7 +510,9 @@ class Chart {
     this.appendToChart(this.hoverPointsContainer);
     this.appendToChart(this.axiosContainer);
     this.appendToChart(this.mouseEventAreaContainer);
+
     this.getTarget()?.appendChild(this.hoverCardContainer);
+    this.getTarget()?.appendChild(this.controlBarContainer);
   };
 
   /**
