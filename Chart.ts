@@ -976,7 +976,6 @@ class Chart {
         this.accShowedDataCount(this.zoomCount);
       }
     } else {
-      console.log(1);
       if (this.showDataCount > this.zoomCount *2) {
         this.accShowedDataCount(-this.zoomCount);
       }

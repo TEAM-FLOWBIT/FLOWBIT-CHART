@@ -18,13 +18,67 @@
         font-family: Pretendard;
       }
       .container {
-        width: 100%;
+        width: 1440px;
         position: relative;
+      }
+      .flowbit-date-pick-bar {
+        position: absolute;
+        z-index: 1;
+        right: 0;
+        border-radius: 10px;
+        background-color: #E8E9EC;
+      }
+      .flowbit-date-pick-bar__list {
+        display: flex;
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+      }
+      .flowbit-date-pick-bar__item {
+      }
+      .flowbit-date-pick-bar__btn {
+        width: 100%;
+        height: 100%;
+        padding: 10px 40px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        
+        font-size: 18px;
+        letter-spacing: 2%;
+        line-height: 26px;
+        color: #616161;
+      }
+      .flowbit-date-pick-bar__btn.selected {
+        border-radius: 12px;
+        background-color: white;
+        border: 1px solid #0056CA;
+        color: #0056CA;
       }
     </style>
   </head>
   <body>
-      <div id="chart" class="container"></div>
+      <div id="chart" class="container">
+        <div class="flowbit-date-pick-bar">
+          <ul class="flowbit-date-pick-bar__list">
+            <li class="flowbit-date-pick-bar__item">
+              <button class="flowbit-date-pick-bar__btn">1일</button>
+            </li>
+            <li class="flowbit-date-pick-bar__item">
+              <button class="flowbit-date-pick-bar__btn">2주</button>
+            </li>
+            <li class="flowbit-date-pick-bar__item">
+              <button class="flowbit-date-pick-bar__btn">1개월</button>
+            </li>
+            <li class="flowbit-date-pick-bar__item">
+              <button class="flowbit-date-pick-bar__btn selected">6개월</button>
+            </li>
+            <li class="flowbit-date-pick-bar__item">
+              <button class="flowbit-date-pick-bar__btn">1년</button>
+            </li>
+          </ul>
+        </div>
+      </div>
   </body>
   <script src="../Chart.js"></script>
   <script>
