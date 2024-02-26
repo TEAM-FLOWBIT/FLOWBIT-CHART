@@ -362,9 +362,10 @@ class Chart {
       ...this.padding,
       // mix font-size and datas.length
       bottom: this.fontSize * 5,
-      top: this.fontSize * 5 + this.datas.length * 25,
-      left: textLength,
-      right: textLength * 2.5,
+      // top: this.fontSize * 5 + this.datas.length * 25,
+      top: this.fontSize * 7,
+      left: 50,
+      right: textLength * 1.5,
     };
   };
 
