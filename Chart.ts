@@ -107,7 +107,8 @@ class Chart {
   private defaultColor: string = '#fff'; // data Line의 기본 색상
   private backgrondColor?: string; // Chart 배경 색상
 
-  private zoom = false; // 줌인, 줌아웃 기능 추가 여부
+  private zoom: boolean = false; // 줌인, 줌 아웃 기능 추가 여부
+  private zoomCount: number = 5; // 줌인, 줌 아웃을 할 때 변동되는 데이터 개수
   private showDataCount: number = 0; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
   private showLabelCount: number = 0; // 화면에 보여줄 라벨 개수 (zoom 모드에서만 사용하는 변수)
 
@@ -149,7 +150,7 @@ class Chart {
       { property: 'id', value: 'flowbit_svg' },
       { property: 'xmlns', value: 'http://www.w3.org/2000/svg' },
       { property: 'viewBox', value: `0 0 ${this.width} ${this.hegiht}` },
-      { property: 'style', value: 'position: relative'}
+      { property: 'style', value: 'position: relative' },
     ]);
 
     if (this.backgrondColor)
@@ -190,7 +191,7 @@ class Chart {
     option?: { classList?: string[]; id?: string }
   ) {
     const dom = document.createElement('div');
-    if(option !== undefined) {
+    if (option !== undefined) {
       const { classList, id } = option;
       if (classList) {
         classList.forEach((item) => {
@@ -450,7 +451,7 @@ class Chart {
       <style>
       .flowbit-control-bar {
         position: absolute;
-        transform: translate(-50%, -160%);
+        transform: translate(-50%, -300%);
         left: 50%;
         bottom: 0;
         display: flex;
@@ -476,28 +477,28 @@ class Chart {
       </style>
       <div class="flowbit-control-bar">
         <div class="flowbit-control-bar__wrapper">
-        <button class="flowbit-control-bar__btn">
+        <button id="flowbit-control-bar-minus" class="flowbit-control-bar__btn">
           <img src="../asset/icon/Minus.svg" alt="">
         </button>
-        <button class="flowbit-control-bar__btn">
+        <button id="flowbit-control-bar-plus" class="flowbit-control-bar__btn">
           <img src="../asset/icon/Plus.svg" alt="">
         </button>
         </div>
         <div class="flowbit-control-bar__wrapper">
-          <button class="flowbit-control-bar__btn">
+          <button id="" class="flowbit-control-bar__btn">
             <img src="../asset/icon/CaretLeft.svg" alt="">
           </button>
-          <button class="flowbit-control-bar__btn">
+          <button id="" class="flowbit-control-bar__btn">
             <img src="../asset/icon/CaretRight.svg" alt="">
           </button>
         </div>
         <div class="flowbit-control-bar__wrapper">
-          <button class="flowbit-control-bar__btn">
+          <button id="" class="flowbit-control-bar__btn">
             <img src="../asset/icon/ArrowCounterClockwise.svg" alt="">
           </button>
         </div>
       </div>
-    `
+    `;
     let controlBarHtml = this.stringToHTML(htmlString);
     this.controlBarContainer.appendChild(controlBarHtml);
 
@@ -513,6 +514,17 @@ class Chart {
 
     this.getTarget()?.appendChild(this.hoverCardContainer);
     this.getTarget()?.appendChild(this.controlBarContainer);
+
+    document
+      .getElementById('flowbit-control-bar-minus')
+      ?.addEventListener('click', () => {
+        this.setZoom(true);
+      });
+    document
+      .getElementById('flowbit-control-bar-plus')
+      ?.addEventListener('click', () => {
+        this.setZoom(false);
+      });
   };
 
   /**
@@ -891,7 +903,7 @@ class Chart {
     const lineWidth = 50;
     const gap = 24;
     const fontSize = 18;
-    
+
     // legend 사이의 갭들을 나타내는 변수
     let accGap = 0;
 
@@ -917,10 +929,12 @@ class Chart {
           value: `${this.datas[i].color}`,
         },
         { property: 'stroke-width', value: `2px` },
-        drawMode === 'dotted' ? {
-          property: 'stroke-dasharray',
-          value: '7',
-        } : {property: 'stroke-dasharray', value: '0'}
+        drawMode === 'dotted'
+          ? {
+              property: 'stroke-dasharray',
+              value: '7',
+            }
+          : { property: 'stroke-dasharray', value: '0' },
       ]);
 
       accGap += gap;
@@ -944,18 +958,28 @@ class Chart {
   };
 
   /**
-   * Chart의 Zoom 기능을 설정하는 함수
+   * showDataCount값에 새로운 값을 누적하는 함수
+   * @param {number} acc showDataCount에 적용할 숫자
    */
-  private setZoomAction = (e: any) => {
-    e.preventDefault();
-    // 데이터 범위 재조정
-    if (e.deltaY > 0) {
-      // Scroll Up
-      if (this.showDataCount < this.maxChartDataCount - 3)
-        this.showDataCount += 3;
+  private accShowedDataCount = (acc: number) => {
+    this.showDataCount += acc;
+  };
+
+  /**
+   * Chart의 Zoom 기능을 설정하는 함수
+   * @param {boolean} isIn zoom in인지 out인지 판단하는 변수
+   */
+  private setZoom = (isIn: boolean) => {
+    if (isIn) {
+      // TODO 줌인 할 때의 조건 변경 필요
+      if (this.showDataCount < this.maxChartDataCount - 5) {
+        this.accShowedDataCount(this.zoomCount);
+      }
     } else {
-      // Scroll Down
-      if (this.showDataCount > 4) this.showDataCount -= 3;
+      console.log(1);
+      if (this.showDataCount > this.zoomCount *2) {
+        this.accShowedDataCount(-this.zoomCount);
+      }
     }
 
     // 차트 데이터의 최대 최소 값 재설정
@@ -968,6 +992,22 @@ class Chart {
     // 재조정 된 데이터 다시 셋팅
     document.getElementById('flowbit_datas')?.remove();
     this.drawGraphLine();
+  };
+
+  /**
+   * Chart의 마우스 휠 기능을 설정하는 함수
+   * @param {any} e MouseWheelEvent 
+   */
+  private setMouseWheelAction = (e: any) => {
+    e.preventDefault();
+    // 데이터 범위 재조정
+    if (e.deltaY > 0) {
+      // Scroll Up
+      this.setZoom(true);
+    } else {
+      // Scroll Down
+      this.setZoom(false);
+    }
   };
 
   /**
@@ -1197,7 +1237,7 @@ class Chart {
     // Zoom in, out 기능
     if (this.zoom) {
       this.mouseEventAreaContainer.addEventListener('mousewheel', (e) => {
-        this.setZoomAction(e);
+        this.setMouseWheelAction(e);
         this.hoverGuidLineContainer.setAttribute('visibility', 'hidden');
         this.hoverPointsContainer.setAttribute('visibility', 'hidden');
         this.hoverCardContainer.style.visibility = 'hidden';
