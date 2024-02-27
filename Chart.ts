@@ -80,6 +80,7 @@ class Chart {
   // HTML Container
   private hoverCardContainer: HTMLElement; // 차트에 호버 시 생성되는 Info Card의 컨테이너
   private controlBarContainer: HTMLElement; // 컨트롤 바의 컨테이너
+  private datePickContainer: HTMLElement; // 데이트 피커의 컨테이너
 
   private svgNs: string = 'http://www.w3.org/2000/svg';
 
@@ -170,6 +171,7 @@ class Chart {
 
     this.hoverCardContainer = document.createElement('div');
     this.controlBarContainer = document.createElement('div');
+    this.datePickContainer = document.createElement('div');
   }
 
   /**
@@ -448,7 +450,7 @@ class Chart {
     this.mouseEventAreaContainer.style.opacity = '0';
 
     // set control bar layout
-    let htmlString = `
+    let controlBarString = `
       <style>
       .flowbit-control-bar {
         position: absolute;
@@ -500,8 +502,87 @@ class Chart {
         </div>
       </div>
     `;
-    let controlBarHtml = this.stringToHTML(htmlString);
+    let controlBarHtml = this.stringToHTML(controlBarString);
     this.controlBarContainer.appendChild(controlBarHtml);
+
+    // set date pick layout
+    let datePickString = `
+    <style>
+      .flowbit-date-pick-bar {
+        position: absolute;
+        z-index: 1;
+        top: 0;
+        right: 0;
+        border-radius: 10px;
+        background-color: #E8E9EC;
+      }
+      .flowbit-date-pick-bar__list {
+        display: flex;
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+      }
+      .flowbit-date-pick-bar__item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .flowbit-date-pick-bar__btn {
+        padding: 10px 40px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        
+        font-size: 18px;
+        line-height: 26px;
+        color: #616161;
+
+        box-sizing: border-box;
+      }
+      .flowbit-date-pick-bar__radio:checked + .flowbit-date-pick-bar__btn {
+        border-radius: 12px;
+        background-color: white;
+        border: 1px solid #0056CA;
+        color: #0056CA;
+      }
+    </style>
+    <div id="flowbit-date-pick-bar" class="flowbit-date-pick-bar">
+      <ul class="flowbit-date-pick-bar__list">
+        <li class="flowbit-date-pick-bar__item">
+          <input id="flowbit-date-pick1" class="flowbit-date-pick-bar__radio"
+            name="flowbit-date-pick" type="radio" class="flowbit-date-pick-bar__radio" hidden checked>
+          <label for="flowbit-date-pick1" class="flowbit-date-pick-bar__btn"
+            data-count="1">1일</label>
+        </li>
+        <li class="flowbit-date-pick-bar__item">
+          <input id="flowbit-date-pick2" class="flowbit-date-pick-bar__radio"
+            name="flowbit-date-pick" type="radio" class="flowbit-date-pick-bar__radio" hidden>
+          <label for="flowbit-date-pick2" class="flowbit-date-pick-bar__btn"
+          data-count="14">2주</label>
+        </li>
+        <li class="flowbit-date-pick-bar__item">
+          <input id="flowbit-date-pick3" class="flowbit-date-pick-bar__radio"
+            name="flowbit-date-pick" type="radio" class="flowbit-date-pick-bar__radio" hidden>
+          <label for="flowbit-date-pick3" class="flowbit-date-pick-bar__btn"
+          data-count="30">1개월</label>
+        </li>
+        <li class="flowbit-date-pick-bar__item">
+          <input id="flowbit-date-pick4" class="flowbit-date-pick-bar__radio"
+            name="flowbit-date-pick" type="radio" class="flowbit-date-pick-bar__radio" hidden>
+          <label for="flowbit-date-pick4" class="flowbit-date-pick-bar__btn selected"
+          data-count="180">6개월</label>
+        </li>
+        <li class="flowbit-date-pick-bar__item">
+          <input id="flowbit-date-pick5" class="flowbit-date-pick-bar__radio"
+            name="flowbit-date-pick" type="radio" class="flowbit-date-pick-bar__radio" hidden>
+          <label for="flowbit-date-pick5" class="flowbit-date-pick-bar__btn"
+          data-count="365">1년</label>
+        </li>
+      </ul>
+    </div>
+    `
+    let datePickHtml = this.stringToHTML(datePickString);
+    this.datePickContainer.appendChild(datePickHtml);
 
     this.appendToChart(this.customColorContainer);
     this.appendToChart(this.labelContainer);
@@ -515,7 +596,9 @@ class Chart {
 
     this.getTarget()?.appendChild(this.hoverCardContainer);
     this.getTarget()?.appendChild(this.controlBarContainer);
+    this.getTarget()?.appendChild(this.datePickContainer);
 
+    // Set HTML Animation
     document
       .getElementById('flowbit-control-bar-minus')
       ?.addEventListener('click', () => {
@@ -526,6 +609,26 @@ class Chart {
       ?.addEventListener('click', () => {
         this.setZoom(false);
       });
+    document.getElementById('flowbit-date-pick-bar')?.addEventListener('click', (e: any) => {
+      let target = e.target;
+
+      if(target.tagName !== 'LABEL') return;
+
+      let newShowCount: number = Number(target.dataset.count);
+
+      this.showDataCount = 14 * newShowCount;
+
+      // 차트 데이터의 최대 최소 값 재설정
+      this.setMinMaxData();
+
+      // 차트 라벨 다시 그리기
+      document.getElementById('flowbit_label')?.remove();
+      this.setLabel();
+
+      // 재조정 된 데이터 다시 셋팅
+      document.getElementById('flowbit_datas')?.remove();
+      this.drawGraphLine();
+    });
   };
 
   /**
