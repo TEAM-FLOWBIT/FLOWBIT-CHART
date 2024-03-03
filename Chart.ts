@@ -480,23 +480,13 @@ class Chart {
       </style>
       <div class="flowbit-control-bar">
         <div class="flowbit-control-bar__wrapper">
-        <button id="flowbit-control-bar-minus" class="flowbit-control-bar__btn">
-          <img src="../asset/icon/Minus.svg" alt="">
-        </button>
-        <button id="flowbit-control-bar-plus" class="flowbit-control-bar__btn">
-          <img src="../asset/icon/Plus.svg" alt="">
-        </button>
-        </div>
-        <div class="flowbit-control-bar__wrapper">
-          <button id="" class="flowbit-control-bar__btn">
-            <img src="../asset/icon/CaretLeft.svg" alt="">
+          <button id="flowbit-control-bar-minus" class="flowbit-control-bar__btn">
+            <img src="../asset/icon/Minus.svg" alt="">
           </button>
-          <button id="" class="flowbit-control-bar__btn">
-            <img src="../asset/icon/CaretRight.svg" alt="">
+          <button id="flowbit-control-bar-plus" class="flowbit-control-bar__btn">
+            <img src="../asset/icon/Plus.svg" alt="">
           </button>
-        </div>
-        <div class="flowbit-control-bar__wrapper">
-          <button id="" class="flowbit-control-bar__btn">
+          <button id="flowbit-control-bar-reset" class="flowbit-control-bar__btn">
             <img src="../asset/icon/ArrowCounterClockwise.svg" alt="">
           </button>
         </div>
@@ -609,6 +599,11 @@ class Chart {
       ?.addEventListener('click', () => {
         this.setZoom(false);
       });
+    document
+      .getElementById('flowbit-control-bar-reset')
+      ?.addEventListener('click', () => {
+        this.reRender();
+      })
     document.getElementById('flowbit-date-pick-bar')?.addEventListener('click', (e: any) => {
       let target = e.target;
 
@@ -616,7 +611,7 @@ class Chart {
 
       let newShowCount: number = Number(target.dataset.count);
 
-      this.showDataCount = 14 * newShowCount;
+      this.showDataCount = this.showLabelCount * newShowCount;
 
       // 차트 데이터의 최대 최소 값 재설정
       this.setMinMaxData();
@@ -1368,6 +1363,23 @@ class Chart {
       this.drawGraphLine();
     });
   };
+
+  /**
+   * C
+   */
+  public reRender = () => {
+    this.showDataCount = 14;
+    // 차트 데이터의 최대 최소 값 재설정
+    this.setMinMaxData();
+    // 차트 라벨 다시 그리기
+    document.getElementById('flowbit_label')?.remove();
+    // Draw X and Y Label
+    this.setLabel();
+    // 재조정 된 데이터 다시 셋팅
+    document.getElementById('flowbit_datas')?.remove();
+    // 데이터 구축
+    this.drawGraphLine();
+  }
 
   /**
    * Chart를 그리는 함수
