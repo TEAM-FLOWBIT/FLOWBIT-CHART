@@ -570,7 +570,7 @@ class Chart {
         </li>
       </ul>
     </div>
-    `
+    `;
     let datePickHtml = this.stringToHTML(datePickString);
     this.datePickContainer.appendChild(datePickHtml);
 
@@ -603,27 +603,29 @@ class Chart {
       .getElementById('flowbit-control-bar-reset')
       ?.addEventListener('click', () => {
         this.reRender();
-      })
-    document.getElementById('flowbit-date-pick-bar')?.addEventListener('click', (e: any) => {
-      let target = e.target;
+      });
+    document
+      .getElementById('flowbit-date-pick-bar')
+      ?.addEventListener('click', (e: any) => {
+        let target = e.target;
 
-      if(target.tagName !== 'LABEL') return;
+        if (target.tagName !== 'LABEL') return;
 
-      let newShowCount: number = Number(target.dataset.count);
+        let newShowCount: number = Number(target.dataset.count);
 
-      this.showDataCount = this.showLabelCount * newShowCount;
+        this.showDataCount = this.showLabelCount * newShowCount;
 
-      // 차트 데이터의 최대 최소 값 재설정
-      this.setMinMaxData();
+        // 차트 데이터의 최대 최소 값 재설정
+        this.setMinMaxData();
 
-      // 차트 라벨 다시 그리기
-      document.getElementById('flowbit_label')?.remove();
-      this.setLabel();
+        // 차트 라벨 다시 그리기
+        document.getElementById('flowbit_label')?.remove();
+        this.setLabel();
 
-      // 재조정 된 데이터 다시 셋팅
-      document.getElementById('flowbit_datas')?.remove();
-      this.drawGraphLine();
-    });
+        // 재조정 된 데이터 다시 셋팅
+        document.getElementById('flowbit_datas')?.remove();
+        this.drawGraphLine();
+      });
   };
 
   /**
@@ -948,6 +950,11 @@ class Chart {
           // drawMode가 Line일 경우 stroke 옵션을 사용해 선 색상 부여
           break;
         case 'area':
+          
+          let areaGradientColor = this.createLinearGradient([
+            { offset: '0', stopColor: areaColor }, 
+          { offset: '1', stopColor: 'rgba(255, 255, 255, 0)' }]);
+
           // drawMode가 area일 경우 새로운 path 태그를 만들고 fill 옵션을 사용해 area 색상 부여
           // area 차트의 좌표 값 생성
           let areaPointList = [...svgPathFromCoordinates];
@@ -955,7 +962,7 @@ class Chart {
           areaPointList.push(`H ${coordinates[0].x}`);
           let areaPath = this.createSvgElement('path', [
             { property: 'd', value: areaPointList.join(' ') },
-            { property: 'fill', value: areaColor },
+            { property: 'fill', value: `url(#${areaGradientColor})` },
           ]);
 
           this.appendChilds(gTagOfPath, [areaPath]);
@@ -1075,7 +1082,7 @@ class Chart {
         this.accShowedDataCount(this.zoomCount);
       }
     } else {
-      if (this.showDataCount > this.zoomCount *2) {
+      if (this.showDataCount > this.zoomCount * 2) {
         this.accShowedDataCount(-this.zoomCount);
       }
     }
@@ -1094,7 +1101,7 @@ class Chart {
 
   /**
    * Chart의 마우스 휠 기능을 설정하는 함수
-   * @param {any} e MouseWheelEvent 
+   * @param {any} e MouseWheelEvent
    */
   private setMouseWheelAction = (e: any) => {
     e.preventDefault();
@@ -1379,7 +1386,7 @@ class Chart {
     document.getElementById('flowbit_datas')?.remove();
     // 데이터 구축
     this.drawGraphLine();
-  }
+  };
 
   /**
    * Chart를 그리는 함수
