@@ -76,7 +76,11 @@ class Chart {
   private mouseEventAreaContainer: SVGSVGElement;
   private hoverGuidLineContainer: SVGSVGElement;
   private hoverPointsContainer: SVGSVGElement;
-  private hoverCardContainer: HTMLElement;
+
+  // HTML Container
+  private hoverCardContainer: HTMLElement; // 차트에 호버 시 생성되는 Info Card의 컨테이너
+  private controlBarContainer: HTMLElement; // 컨트롤 바의 컨테이너
+  private datePickContainer: HTMLElement; // 데이트 피커의 컨테이너
 
   private svgNs: string = 'http://www.w3.org/2000/svg';
 
@@ -104,7 +108,8 @@ class Chart {
   private defaultColor: string = '#fff'; // data Line의 기본 색상
   private backgrondColor?: string; // Chart 배경 색상
 
-  private zoom = false; // 줌인, 줌아웃 기능 추가 여부
+  private zoom: boolean = false; // 줌인, 줌 아웃 기능 추가 여부
+  private zoomCount: number = 5; // 줌인, 줌 아웃을 할 때 변동되는 데이터 개수
   private showDataCount: number = 0; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
   private showLabelCount: number = 0; // 화면에 보여줄 라벨 개수 (zoom 모드에서만 사용하는 변수)
 
@@ -146,6 +151,7 @@ class Chart {
       { property: 'id', value: 'flowbit_svg' },
       { property: 'xmlns', value: 'http://www.w3.org/2000/svg' },
       { property: 'viewBox', value: `0 0 ${this.width} ${this.hegiht}` },
+      { property: 'style', value: 'position: relative' },
     ]);
 
     if (this.backgrondColor)
@@ -162,7 +168,10 @@ class Chart {
     this.mouseEventAreaContainer = this.createSvgElement('g');
     this.hoverGuidLineContainer = this.createSvgElement('g');
     this.hoverPointsContainer = this.createSvgElement('g');
+
     this.hoverCardContainer = document.createElement('div');
+    this.controlBarContainer = document.createElement('div');
+    this.datePickContainer = document.createElement('div');
   }
 
   /**
@@ -181,16 +190,18 @@ class Chart {
    */
   private stringToHTML(
     str: string,
-    option: { classList?: string[]; id?: string }
+    option?: { classList?: string[]; id?: string }
   ) {
-    const { classList, id } = option;
     const dom = document.createElement('div');
-    if (classList) {
-      classList.forEach((item) => {
-        dom.classList.add(item);
-      });
+    if (option !== undefined) {
+      const { classList, id } = option;
+      if (classList) {
+        classList.forEach((item) => {
+          dom.classList.add(item);
+        });
+      }
+      id && dom.setAttribute('id', id);
     }
-    id && dom.setAttribute('id', id);
     dom.innerHTML = str;
     return dom;
   }
@@ -338,6 +349,7 @@ class Chart {
 
     const averageOfMinMax =
       (this.maxDataForDatas - this.minDataForDatas) / this.yAxisCount;
+
     this.maxData = this.maxDataForDatas + averageOfMinMax;
     this.minData = this.minDataForDatas - averageOfMinMax;
   }
@@ -352,9 +364,10 @@ class Chart {
       ...this.padding,
       // mix font-size and datas.length
       bottom: this.fontSize * 5,
-      top: this.fontSize * 5 + this.datas.length * 25,
-      left: textLength,
-      right: textLength * 2.5,
+      // top: this.fontSize * 5 + this.datas.length * 25,
+      top: this.fontSize * 7,
+      left: 50,
+      right: textLength * 1.5,
     };
   };
 
@@ -415,8 +428,6 @@ class Chart {
       this.appendChilds(this.hoverPointsContainer, [point]);
     });
 
-    this.hoverCardContainer = document.createElement('div');
-
     // Create Mouse Event Area Container For Chart
     this.mouseEventAreaContainer = this.createSvgElement('rect', [
       { property: 'x', value: `${this.padding.left}` },
@@ -438,6 +449,119 @@ class Chart {
       'url("https://www.bithumb.com/react/charting_library/sta…es/crosshair.6c091f7d5427d0c5e6d9dc3a90eb2b20.cur"),crosshair';
     this.mouseEventAreaContainer.style.opacity = '0';
 
+    // set control bar layout
+    let controlBarString = `
+      <style>
+      .flowbit-control-bar {
+        position: absolute;
+        transform: translate(-50%, -300%);
+        left: 50%;
+        bottom: 0;
+        display: flex;
+        gap: 24px;
+        z-index: 1;
+      }
+      .flowbit-control-bar__wrapper {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .flowbit-control-bar__btn {
+        width: 32px;
+        height: 32px;
+        border: 1px solid #c1c1c1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        background-color: white;
+        cursor: pointer;
+      }
+      </style>
+      <div class="flowbit-control-bar">
+        <div class="flowbit-control-bar__wrapper">
+          <button id="flowbit-control-bar-minus" class="flowbit-control-bar__btn">
+            <img src="../asset/icon/Minus.svg" alt="">
+          </button>
+          <button id="flowbit-control-bar-plus" class="flowbit-control-bar__btn">
+            <img src="../asset/icon/Plus.svg" alt="">
+          </button>
+          <button id="flowbit-control-bar-reset" class="flowbit-control-bar__btn">
+            <img src="../asset/icon/ArrowCounterClockwise.svg" alt="">
+          </button>
+        </div>
+      </div>
+    `;
+    let controlBarHtml = this.stringToHTML(controlBarString);
+    this.controlBarContainer.appendChild(controlBarHtml);
+
+    // set date pick layout
+    let datePickString = `
+    <style>
+      .flowbit-date-pick-bar {
+        position: absolute;
+        z-index: 1;
+        top: 0;
+        right: 0;
+        border-radius: 30px;
+        background-color: #E8E9EC;
+      }
+      .flowbit-date-pick-bar__list {
+        display: flex;
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+      }
+      .flowbit-date-pick-bar__item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .flowbit-date-pick-bar__btn {
+        padding: 9px 24px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        
+        font-size: 14px;
+        line-height: 22px;
+        color: #424242;
+
+        box-sizing: border-box;
+      }
+      .flowbit-date-pick-bar__radio:checked + .flowbit-date-pick-bar__btn {
+        border-radius: 30px;
+        background-color: white;
+        border: 1px solid #0056CA;
+        color: #0056CA;
+      }
+    </style>
+    <div id="flowbit-date-pick-bar" class="flowbit-date-pick-bar">
+      <ul class="flowbit-date-pick-bar__list">
+        <li class="flowbit-date-pick-bar__item">
+          <input id="flowbit-date-pick2" class="flowbit-date-pick-bar__radio"
+            name="flowbit-date-pick" type="radio" class="flowbit-date-pick-bar__radio" hidden checked>
+          <label for="flowbit-date-pick2" class="flowbit-date-pick-bar__btn"
+          data-count="14">2주</label>
+        </li>
+        <li class="flowbit-date-pick-bar__item">
+          <input id="flowbit-date-pick3" class="flowbit-date-pick-bar__radio"
+            name="flowbit-date-pick" type="radio" class="flowbit-date-pick-bar__radio" hidden>
+          <label for="flowbit-date-pick3" class="flowbit-date-pick-bar__btn"
+          data-count="30">1개월</label>
+        </li>
+        <li class="flowbit-date-pick-bar__item">
+          <input id="flowbit-date-pick4" class="flowbit-date-pick-bar__radio"
+            name="flowbit-date-pick" type="radio" class="flowbit-date-pick-bar__radio" hidden>
+          <label for="flowbit-date-pick4" class="flowbit-date-pick-bar__btn selected"
+          data-count="180">6개월</label>
+        </li>
+      </ul>
+    </div>
+    `;
+    let datePickHtml = this.stringToHTML(datePickString);
+    this.datePickContainer.appendChild(datePickHtml);
+
     this.appendToChart(this.customColorContainer);
     this.appendToChart(this.labelContainer);
     this.appendToChart(this.legendContainer);
@@ -447,7 +571,49 @@ class Chart {
     this.appendToChart(this.hoverPointsContainer);
     this.appendToChart(this.axiosContainer);
     this.appendToChart(this.mouseEventAreaContainer);
+
     this.getTarget()?.appendChild(this.hoverCardContainer);
+    this.getTarget()?.appendChild(this.controlBarContainer);
+    this.getTarget()?.appendChild(this.datePickContainer);
+
+    // Set HTML Animation
+    document
+      .getElementById('flowbit-control-bar-minus')
+      ?.addEventListener('click', () => {
+        this.setZoom(true);
+      });
+    document
+      .getElementById('flowbit-control-bar-plus')
+      ?.addEventListener('click', () => {
+        this.setZoom(false);
+      });
+    document
+      .getElementById('flowbit-control-bar-reset')
+      ?.addEventListener('click', () => {
+        this.reRender();
+      });
+    document
+      .getElementById('flowbit-date-pick-bar')
+      ?.addEventListener('click', (e: any) => {
+        let target = e.target;
+
+        if (target.tagName !== 'LABEL') return;
+
+        let newShowCount: number = Number(target.dataset.count);
+
+        this.showDataCount = this.showLabelCount * newShowCount;
+
+        // 차트 데이터의 최대 최소 값 재설정
+        this.setMinMaxData();
+
+        // 차트 라벨 다시 그리기
+        document.getElementById('flowbit_label')?.remove();
+        this.setLabel();
+
+        // 재조정 된 데이터 다시 셋팅
+        document.getElementById('flowbit_datas')?.remove();
+        this.drawGraphLine();
+      });
   };
 
   /**
@@ -772,6 +938,11 @@ class Chart {
           // drawMode가 Line일 경우 stroke 옵션을 사용해 선 색상 부여
           break;
         case 'area':
+          let areaGradientColor = this.createLinearGradient([
+            { offset: '0', stopColor: areaColor },
+            { offset: '1', stopColor: 'rgba(255, 255, 255, 0)' },
+          ]);
+
           // drawMode가 area일 경우 새로운 path 태그를 만들고 fill 옵션을 사용해 area 색상 부여
           // area 차트의 좌표 값 생성
           let areaPointList = [...svgPathFromCoordinates];
@@ -779,7 +950,7 @@ class Chart {
           areaPointList.push(`H ${coordinates[0].x}`);
           let areaPath = this.createSvgElement('path', [
             { property: 'd', value: areaPointList.join(' ') },
-            { property: 'fill', value: areaColor },
+            { property: 'fill', value: `url(#${areaGradientColor})` },
           ]);
 
           this.appendChilds(gTagOfPath, [areaPath]);
@@ -822,10 +993,13 @@ class Chart {
    * Chart의 Legend를 설정하는 함수
    */
   private setLegend = () => {
-    const legendHeight = 25;
-    const lineWidth = 28;
-    const gap = 8;
-    const fontSize = 14;
+    const legendHeight = 50;
+    const lineWidth = 50;
+    const gap = 24;
+    const fontSize = 18;
+
+    // legend 사이의 갭들을 나타내는 변수
+    let accGap = 0;
 
     const gTagOfLegend = this.createSvgElement('g', [
       { property: 'class', value: `legend` },
@@ -833,79 +1007,72 @@ class Chart {
 
     for (let i = 0; i < this.datas.length; i++) {
       let data = this.datas[i];
+      const { label, drawMode } = data;
 
-      const x = this.width - this.padding.right;
-      const y = this.padding.top - this.padding.bottom / 2 - i * legendHeight;
-      const text = this.createSvgElement('text', [
-        { property: 'font-size', value: `${fontSize}` },
-        { property: 'fill', value: `#fff` },
-        { property: 'text-anchor', value: `end` },
-        { property: 'x', value: `${x}` },
-        { property: 'y', value: `${y}` },
-        { property: 'dominant-baseline', value: 'middle' },
-      ]);
-      text.append(data.label);
-
-      const bbox = this.getBBox(text);
-      const textLength = bbox.width;
-
-      // set color
-      let legendCustomColor = '';
-      if (data.customColor) {
-        let customColorElement = data.customColor().legend;
-        if (customColorElement) {
-          legendCustomColor = this.setCustomColor(
-            customColorElement,
-            {
-              x1: `${x - gap - lineWidth - textLength}`,
-              x2: `${x - gap - textLength}`,
-              y1: `${y}`,
-              y2: `${y}`,
-            },
-            'userSpaceOnUse'
-          );
-        }
-      }
+      // Get text position
+      const x = this.padding.left;
+      const y = this.padding.top - legendHeight;
 
       const line = this.createSvgElement('line', [
-        { property: 'x1', value: `${x - gap - lineWidth - textLength}` },
+        { property: 'x1', value: `${x + accGap}` },
         { property: 'y1', value: `${y}` },
-        { property: 'x2', value: `${x - gap - textLength}` },
+        { property: 'x2', value: `${x + lineWidth + accGap}` },
         { property: 'y2', value: `${y}` },
         {
           property: 'stroke',
-          value: (() => {
-            let color: string | undefined;
-            if (legendCustomColor !== '') {
-              color = `url('#${legendCustomColor}')`;
-            } else {
-              color = data.color;
-            }
-            return color === undefined ? this.defaultColor : color;
-          })(),
+          value: `${this.datas[i].color}`,
         },
-        { property: 'stroke-width', value: `4px` },
-        { property: 'stroke-linecap', value: 'round' },
-        { property: 'stroke-linejoin', value: 'round' },
+        { property: 'stroke-width', value: `2px` },
+        drawMode === 'dotted'
+          ? {
+              property: 'stroke-dasharray',
+              value: '7',
+            }
+          : { property: 'stroke-dasharray', value: '0' },
       ]);
+
+      accGap += gap;
+
+      const text = this.createSvgElement('text', [
+        { property: 'font-size', value: `${fontSize}` },
+        { property: 'fill', value: `#616161` },
+        { property: 'x', value: `${x + lineWidth + accGap}` },
+        { property: 'y', value: `${y}` },
+        { property: 'dominant-baseline', value: 'middle' },
+      ]);
+      text.append(label);
+      const bbox = this.getBBox(text);
+      const textLength = bbox.width;
+
+      accGap += gap + lineWidth + textLength;
+
       this.appendChilds(gTagOfLegend, [text, line]);
     }
     this.appendChilds(this.legendContainer, [gTagOfLegend]);
   };
 
   /**
-   * Chart의 Zoom 기능을 설정하는 함수
+   * showDataCount값에 새로운 값을 누적하는 함수
+   * @param {number} acc showDataCount에 적용할 숫자
    */
-  private setZoomAction = (e: any) => {
-    e.preventDefault();
-    // 데이터 범위 재조정
-    if (e.deltaY > 0) {
-      // Scroll Up
-      if (this.showDataCount < this.maxChartDataCount - 3)
-        this.showDataCount += 3;
+  private accShowedDataCount = (acc: number) => {
+    this.showDataCount += acc;
+  };
+
+  /**
+   * Chart의 Zoom 기능을 설정하는 함수
+   * @param {boolean} isIn zoom in인지 out인지 판단하는 변수
+   */
+  private setZoom = (isIn: boolean) => {
+    if (isIn) {
+      // TODO 줌인 할 때의 조건 변경 필요
+      if (this.showDataCount < this.maxChartDataCount - 5) {
+        this.accShowedDataCount(this.zoomCount);
+      }
     } else {
-      // Scroll Down
-      if (this.showDataCount > 4) this.showDataCount -= 3;
+      if (this.showDataCount > this.zoomCount * 2) {
+        this.accShowedDataCount(-this.zoomCount);
+      }
     }
 
     // 차트 데이터의 최대 최소 값 재설정
@@ -918,6 +1085,22 @@ class Chart {
     // 재조정 된 데이터 다시 셋팅
     document.getElementById('flowbit_datas')?.remove();
     this.drawGraphLine();
+  };
+
+  /**
+   * Chart의 마우스 휠 기능을 설정하는 함수
+   * @param {any} e MouseWheelEvent
+   */
+  private setMouseWheelAction = (e: any) => {
+    e.preventDefault();
+    // 데이터 범위 재조정
+    if (e.deltaY > 0) {
+      // Scroll Up
+      this.setZoom(true);
+    } else {
+      // Scroll Down
+      this.setZoom(false);
+    }
   };
 
   /**
@@ -972,12 +1155,14 @@ class Chart {
       <style>
         .flowbit-hover-card {
           width: 256px;
-          background-color: #323743;
+          background-color: #fff;
           border-radius: 4px;
+          border: 2px solid #eee;
           padding: 16px 20px;
-          color: white;
+          color: #9E9E9E;
           visibility: hidden;
           position: absolute;
+          z-index: 2;
         }
         .flowbit-hover-card__title {
           display: flex;
@@ -997,7 +1182,7 @@ class Chart {
           color: #E74C4C;
         }
         .flowbit-hover-card__badge.green {
-          color: #29D86F;
+          color: #0056CA;
         }
         .flowbit-hover-card__contentList {
           list-style-type: none;
@@ -1009,13 +1194,20 @@ class Chart {
           align-items: center;
           justify-content: space-between;
         }
-        .flowbit-hover-card__content h2 {
+        .flowbit-hover-card__content h2,
+        .flowbit-hover-card__content h1 {
           font-size: 14px;
           font-weight: normal;
           letter-spacing: 2%;
         }
+        .flowbit-hover-card__content h1 {
+          color: #424242;
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
+        }
         .flowbit-hover-card__content.gray h2 {
-          color: gray;
+          color: #0056CA;
         }
       </style>
       <div>
@@ -1026,13 +1218,13 @@ class Chart {
           <span class="flowbit-hover-card__badge green">매수하세요</span>
         </div>
         <ul class="flowbit-hover-card__contentList">
-          <li class="flowbit-hover-card__content gray">
+          <li class="flowbit-hover-card__content">
             <h2>${dataInfoList[0].legend}</h2>
             <h2>-</h2>
           </li>
           <li class="flowbit-hover-card__content">
             <h2>${dataInfoList[1].legend}</h2>
-            <h2>${dataInfoList[1].cur.toLocaleString()}</h2>
+            <h1>${dataInfoList[1].cur.toLocaleString()}</h1>
           </li>
         </ul>
       </div>
@@ -1046,12 +1238,14 @@ class Chart {
       <style>
         .flowbit-hover-card {
           width: 256px;
-          background-color: #323743;
+          background-color: #fff;
           border-radius: 4px;
+          border: 2px solid #eee;
           padding: 16px 20px;
-          color: white;
+          color: #9E9E9E;
           visibility: hidden;
           position: absolute;
+          z-index: 2;
         }
         .flowbit-hover-card__title {
           display: flex;
@@ -1071,7 +1265,7 @@ class Chart {
           color: #E74C4C;
         }
         .flowbit-hover-card__badge.green {
-          color: #29D86F;
+          color: #0056CA;
         }
         .flowbit-hover-card__contentList {
           list-style-type: none;
@@ -1083,13 +1277,20 @@ class Chart {
           align-items: center;
           justify-content: space-between;
         }
-        .flowbit-hover-card__content h2 {
+        .flowbit-hover-card__content h2,
+        .flowbit-hover-card__content h1 {
           font-size: 14px;
           font-weight: normal;
           letter-spacing: 2%;
         }
+        .flowbit-hover-card__content h1 {
+          color: #424242;
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
+        }
         .flowbit-hover-card__content.gray h2 {
-          color: gray;
+          color: #0056CA;
         }
       </style>
       <div>
@@ -1104,11 +1305,11 @@ class Chart {
         <ul class="flowbit-hover-card__contentList">
           <li class="flowbit-hover-card__content">
             <h2>${dataInfoList[0].legend}</h2>
-            <h2>${dataInfoList[0].cur.toLocaleString()}</h2>
+            <h1>${dataInfoList[0].cur.toLocaleString()}</h1>
           </li>
           <li class="flowbit-hover-card__content">
             <h2>${dataInfoList[1].legend}</h2>
-            <h2>${dataInfoList[1].cur.toLocaleString()}</h2>
+            <h1>${dataInfoList[1].cur.toLocaleString()}</h1>
           </li>
         </ul>
       </div>
@@ -1120,15 +1321,19 @@ class Chart {
     this.hoverCardContainer = this.stringToHTML(hoverCardString, {
       classList: ['flowbit-hover-card'],
     });
+
     this.getTarget()?.append(this.hoverCardContainer);
 
+    // 마우스 Y 에서 차트 Y 빼면 댐
+    // console.log(this.chart.getBoundingClientRect().y);
+
     this.hoverCardContainer.style.visibility = 'visible';
-    this.hoverCardContainer.style.top = `${e.pageY + 10}px`;
+    this.hoverCardContainer.style.top = `${e.offsetY + 20}px`;
     if (persent > 0.5) {
-      this.hoverCardContainer.style.left = `${e.pageX - 10}px`;
+      this.hoverCardContainer.style.left = `${e.clientX - 10}px`;
       this.hoverCardContainer.style.translate = '-100%';
     } else {
-      this.hoverCardContainer.style.left = `${e.pageX + 10}px`;
+      this.hoverCardContainer.style.left = `${e.clientX + 10}px`;
       this.hoverCardContainer.style.translate = '0';
     }
   };
@@ -1143,7 +1348,7 @@ class Chart {
     // Zoom in, out 기능
     if (this.zoom) {
       this.mouseEventAreaContainer.addEventListener('mousewheel', (e) => {
-        this.setZoomAction(e);
+        this.setMouseWheelAction(e);
         this.hoverGuidLineContainer.setAttribute('visibility', 'hidden');
         this.hoverPointsContainer.setAttribute('visibility', 'hidden');
         this.hoverCardContainer.style.visibility = 'hidden';
@@ -1170,6 +1375,23 @@ class Chart {
       document.getElementById('flowbit_datas')?.remove();
       this.drawGraphLine();
     });
+  };
+
+  /**
+   * C
+   */
+  public reRender = () => {
+    this.showDataCount = 14;
+    // 차트 데이터의 최대 최소 값 재설정
+    this.setMinMaxData();
+    // 차트 라벨 다시 그리기
+    document.getElementById('flowbit_label')?.remove();
+    // Draw X and Y Label
+    this.setLabel();
+    // 재조정 된 데이터 다시 셋팅
+    document.getElementById('flowbit_datas')?.remove();
+    // 데이터 구축
+    this.drawGraphLine();
   };
 
   /**
