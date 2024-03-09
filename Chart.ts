@@ -503,7 +503,7 @@ class Chart {
         z-index: 1;
         top: 0;
         right: 0;
-        border-radius: 10px;
+        border-radius: 30px;
         background-color: #E8E9EC;
       }
       .flowbit-date-pick-bar__list {
@@ -518,19 +518,19 @@ class Chart {
         justify-content: center;
       }
       .flowbit-date-pick-bar__btn {
-        padding: 10px 40px;
+        padding: 9px 24px;
         background: none;
         border: none;
         cursor: pointer;
         
-        font-size: 18px;
-        line-height: 26px;
-        color: #616161;
+        font-size: 14px;
+        line-height: 22px;
+        color: #424242;
 
         box-sizing: border-box;
       }
       .flowbit-date-pick-bar__radio:checked + .flowbit-date-pick-bar__btn {
-        border-radius: 12px;
+        border-radius: 30px;
         background-color: white;
         border: 1px solid #0056CA;
         color: #0056CA;
@@ -539,14 +539,8 @@ class Chart {
     <div id="flowbit-date-pick-bar" class="flowbit-date-pick-bar">
       <ul class="flowbit-date-pick-bar__list">
         <li class="flowbit-date-pick-bar__item">
-          <input id="flowbit-date-pick1" class="flowbit-date-pick-bar__radio"
-            name="flowbit-date-pick" type="radio" class="flowbit-date-pick-bar__radio" hidden checked>
-          <label for="flowbit-date-pick1" class="flowbit-date-pick-bar__btn"
-            data-count="1">1일</label>
-        </li>
-        <li class="flowbit-date-pick-bar__item">
           <input id="flowbit-date-pick2" class="flowbit-date-pick-bar__radio"
-            name="flowbit-date-pick" type="radio" class="flowbit-date-pick-bar__radio" hidden>
+            name="flowbit-date-pick" type="radio" class="flowbit-date-pick-bar__radio" hidden checked>
           <label for="flowbit-date-pick2" class="flowbit-date-pick-bar__btn"
           data-count="14">2주</label>
         </li>
@@ -561,12 +555,6 @@ class Chart {
             name="flowbit-date-pick" type="radio" class="flowbit-date-pick-bar__radio" hidden>
           <label for="flowbit-date-pick4" class="flowbit-date-pick-bar__btn selected"
           data-count="180">6개월</label>
-        </li>
-        <li class="flowbit-date-pick-bar__item">
-          <input id="flowbit-date-pick5" class="flowbit-date-pick-bar__radio"
-            name="flowbit-date-pick" type="radio" class="flowbit-date-pick-bar__radio" hidden>
-          <label for="flowbit-date-pick5" class="flowbit-date-pick-bar__btn"
-          data-count="365">1년</label>
         </li>
       </ul>
     </div>
@@ -950,10 +938,10 @@ class Chart {
           // drawMode가 Line일 경우 stroke 옵션을 사용해 선 색상 부여
           break;
         case 'area':
-          
           let areaGradientColor = this.createLinearGradient([
-            { offset: '0', stopColor: areaColor }, 
-          { offset: '1', stopColor: 'rgba(255, 255, 255, 0)' }]);
+            { offset: '0', stopColor: areaColor },
+            { offset: '1', stopColor: 'rgba(255, 255, 255, 0)' },
+          ]);
 
           // drawMode가 area일 경우 새로운 path 태그를 만들고 fill 옵션을 사용해 area 색상 부여
           // area 차트의 좌표 값 생성
@@ -1167,12 +1155,14 @@ class Chart {
       <style>
         .flowbit-hover-card {
           width: 256px;
-          background-color: #323743;
+          background-color: #fff;
           border-radius: 4px;
+          border: 2px solid #eee;
           padding: 16px 20px;
-          color: white;
+          color: #9E9E9E;
           visibility: hidden;
           position: absolute;
+          z-index: 2;
         }
         .flowbit-hover-card__title {
           display: flex;
@@ -1192,7 +1182,7 @@ class Chart {
           color: #E74C4C;
         }
         .flowbit-hover-card__badge.green {
-          color: #29D86F;
+          color: #0056CA;
         }
         .flowbit-hover-card__contentList {
           list-style-type: none;
@@ -1204,13 +1194,20 @@ class Chart {
           align-items: center;
           justify-content: space-between;
         }
-        .flowbit-hover-card__content h2 {
+        .flowbit-hover-card__content h2,
+        .flowbit-hover-card__content h1 {
           font-size: 14px;
           font-weight: normal;
           letter-spacing: 2%;
         }
+        .flowbit-hover-card__content h1 {
+          color: #424242;
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
+        }
         .flowbit-hover-card__content.gray h2 {
-          color: gray;
+          color: #0056CA;
         }
       </style>
       <div>
@@ -1221,13 +1218,13 @@ class Chart {
           <span class="flowbit-hover-card__badge green">매수하세요</span>
         </div>
         <ul class="flowbit-hover-card__contentList">
-          <li class="flowbit-hover-card__content gray">
+          <li class="flowbit-hover-card__content">
             <h2>${dataInfoList[0].legend}</h2>
             <h2>-</h2>
           </li>
           <li class="flowbit-hover-card__content">
             <h2>${dataInfoList[1].legend}</h2>
-            <h2>${dataInfoList[1].cur.toLocaleString()}</h2>
+            <h1>${dataInfoList[1].cur.toLocaleString()}</h1>
           </li>
         </ul>
       </div>
@@ -1241,12 +1238,14 @@ class Chart {
       <style>
         .flowbit-hover-card {
           width: 256px;
-          background-color: #323743;
+          background-color: #fff;
           border-radius: 4px;
+          border: 2px solid #eee;
           padding: 16px 20px;
-          color: white;
+          color: #9E9E9E;
           visibility: hidden;
           position: absolute;
+          z-index: 2;
         }
         .flowbit-hover-card__title {
           display: flex;
@@ -1266,7 +1265,7 @@ class Chart {
           color: #E74C4C;
         }
         .flowbit-hover-card__badge.green {
-          color: #29D86F;
+          color: #0056CA;
         }
         .flowbit-hover-card__contentList {
           list-style-type: none;
@@ -1278,13 +1277,20 @@ class Chart {
           align-items: center;
           justify-content: space-between;
         }
-        .flowbit-hover-card__content h2 {
+        .flowbit-hover-card__content h2,
+        .flowbit-hover-card__content h1 {
           font-size: 14px;
           font-weight: normal;
           letter-spacing: 2%;
         }
+        .flowbit-hover-card__content h1 {
+          color: #424242;
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
+        }
         .flowbit-hover-card__content.gray h2 {
-          color: gray;
+          color: #0056CA;
         }
       </style>
       <div>
@@ -1299,11 +1305,11 @@ class Chart {
         <ul class="flowbit-hover-card__contentList">
           <li class="flowbit-hover-card__content">
             <h2>${dataInfoList[0].legend}</h2>
-            <h2>${dataInfoList[0].cur.toLocaleString()}</h2>
+            <h1>${dataInfoList[0].cur.toLocaleString()}</h1>
           </li>
           <li class="flowbit-hover-card__content">
             <h2>${dataInfoList[1].legend}</h2>
-            <h2>${dataInfoList[1].cur.toLocaleString()}</h2>
+            <h1>${dataInfoList[1].cur.toLocaleString()}</h1>
           </li>
         </ul>
       </div>
